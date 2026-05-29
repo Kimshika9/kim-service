@@ -22,14 +22,13 @@ To make the backend work, you need to create a Firebase project:
    - `script.js`
    - `admin.html`
 
-### 2. Hosting
-Upload `index.html`, `admin.html`, `style.css`, and `script.js` to your hosting provider (e.g., GitHub Pages).
+### 2. Hosting (Free Forever)
+You can host this website for **$0 cost**:
+- **GitHub Pages:** Upload your files to a GitHub repository. Go to **Settings > Pages** and set the source to your main branch.
+- **Vercel:** Connect your GitHub to [Vercel](https://vercel.com) for a fast, free `https://your-site.vercel.app` link.
 
-### 3. Custom Domain (.com)
-If you bought a custom domain (like `kimservice.com`):
-1. **GitHub Pages:** Go to your repo **Settings > Pages**.
-2. Under **Custom Domain**, type your domain name.
-3. In your Domain Registrar (Namecheap/GoDaddy), add **CNAME** and **A Records** pointing to GitHub's servers.
+### 3. Custom Domain (Optional)
+If you ever decide to buy a `.com` domain in the future, you can easily connect it to GitHub Pages or Vercel for free.
 
 ## 📁 File Structure
 - `index.html`: Main customer-facing website.
