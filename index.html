@@ -2,904 +2,190 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kim Service Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-purple: #6a0dad;
-            --light-purple: #a855f7;
-            --gradient-bg: linear-gradient(135deg, #6a0dad, #a855f7);
-            --white: #ffffff;
-            --black: #000000;
-            --gray: #f8f9fa;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            background: var(--white);
-            color: var(--black);
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-
-        /* Loading Screen */
-        #loadingScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--gradient-bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-
-        .loading-spots {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .spot {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--white);
-            animation: spotPulse 1.4s infinite ease-in-out;
-        }
-
-        .spot:nth-child(2) { animation-delay: 0.2s; }
-        .spot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes spotPulse {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-            40% { transform: scale(1.2); opacity: 1; }
-        }
-
-        .loading-text {
-            color: var(--white);
-            font-weight: 700;
-            font-size: 26px;
-            opacity: 0;
-            position: absolute;
-            animation: textFade 2s forwards;
-            animation-delay: 1.5s;
-        }
-
-        @keyframes textFade {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .spots-container.fade-out {
-            animation: fadeOutEffect 0.5s forwards;
-            animation-delay: 1.2s;
-        }
-
-        @keyframes fadeOutEffect {
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        /* Main Screen */
-        #mainScreen {
-            display: none;
-            min-height: 100vh;
-            background: var(--white);
-            padding-bottom: 70px;
-        }
-
-        .header {
-            padding: 50px 20px;
-            background: var(--gradient-bg);
-            color: var(--white);
-            text-align: center;
-            border-bottom-left-radius: 35px;
-            border-bottom-right-radius: 35px;
-            box-shadow: 0 4px 15px rgba(106, 13, 173, 0.3);
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .menu-container {
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .main-button {
-            aspect-ratio: 1;
-            background: var(--gradient-bg);
-            border: none;
-            border-radius: 25px;
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(106, 13, 173, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .main-button:active {
-            transform: scale(0.96);
-            box-shadow: 0 5px 10px rgba(106, 13, 173, 0.2);
-        }
-
-        .main-button .icon {
-            font-size: 44px;
-        }
-
-        /* Sub Pages */
-        .page {
-            display: none;
-            padding: 20px;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .back-btn {
-            background: var(--white);
-            border: 1.5px solid var(--primary-purple);
-            color: var(--primary-purple);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .page-title {
-            color: var(--black);
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .caption-text {
-            color: var(--primary-purple);
-            text-align: center;
-            margin-top: -15px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Grid for Services */
-        .service-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .mini-button {
-            padding: 18px 10px;
-            background: var(--white);
-            border: 2px solid var(--primary-purple);
-            color: var(--primary-purple);
-            border-radius: 15px;
-            font-weight: 600;
-            font-size: 14px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .mini-button:active {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        /* Quality Selection */
-        .quality-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .quality-item {
-            padding: 14px;
-            background: var(--white);
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--primary-purple);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .quality-item.selected {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        .fee-box {
-            margin: 25px 0;
-            padding: 20px;
-            background: var(--gray);
-            border: 2px dashed var(--primary-purple);
-            border-radius: 18px;
-            text-align: center;
-        }
-
-        .fee-label {
-            font-size: 15px;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .fee-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary-purple);
-        }
-
-        .discretion-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .discretion-input {
-            width: 100%;
-            height: 120px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            resize: none;
-            outline: none;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .discretion-input:focus {
-            border-color: var(--primary-purple);
-        }
-
-        .option-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .option-btn {
-            flex: 1;
-            padding: 14px;
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            color: var(--primary-purple);
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .option-btn.selected {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        .confirm-btn {
-            width: 100%;
-            padding: 18px;
-            background: #22c55e;
-            color: var(--white);
-            border: none;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 6px 15px rgba(34, 197, 94, 0.3);
-            transition: transform 0.2s;
-        }
-
-        .confirm-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Receipt Popup */
-        .receipt-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 11000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .receipt-card {
-            width: 280px;
-            background: var(--white);
-            padding: 35px 25px;
-            border-radius: 30px;
-            text-align: center;
-            position: relative;
-            animation: receiptPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-
-        @keyframes receiptPop {
-            from { transform: scale(0.7); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .receipt-card .circle-deco {
-            width: 50px;
-            height: 50px;
-            background: #22c55e;
-            border-radius: 50%;
-            margin: 20px auto 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--white);
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
-        }
-
-        .receipt-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--black);
-            margin-bottom: 5px;
-        }
-
-        /* Bottom Bar */
-        .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 70px;
-            background: var(--white);
-            border-top: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
-        }
-
-        .history-trigger {
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--primary-purple);
-            background: #f3e8ff;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-        }
-
-        /* History */
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .history-item {
-            padding: 20px;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--primary-purple);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-            text-transform: uppercase;
-        }
-
-        .status-pending { background: #fffbeb; color: #d97706; }
-        .status-confirmed { background: #f0fdf4; color: #16a34a; }
-
-        /* Editing Section */
-        .editing-range {
-            font-size: 12px;
-            color: #777;
-            margin-top: 4px;
-        }
-
-        .category-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .category-btn {
-            padding: 15px;
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            color: var(--primary-purple);
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .category-btn.selected {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        .hidden { display: none !important; }
-
-        hr {
-            border: 0;
-            border-top: 1px solid #eee;
-            margin: 30px 0;
-        }
-
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kim Service Center | Premium Agency</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Loading Screen -->
-    <div id="loadingScreen">
-        <div class="spots-container" id="spotsContainer">
-            <div class="loading-spots">
-                <div class="spot"></div>
-                <div class="spot"></div>
-                <div class="spot"></div>
-            </div>
-        </div>
-        <div class="loading-text">Best Service Center</div>
+<div class="container">
+    <header class="fade-in">
+        <div class="logo gradient-text">KIM SERVICE CENTER</div>
+        <div class="subtitle">PREMIUM LUXURY AGENCY</div>
+    </header>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="step-node active" data-step="1">1</div>
+        <div class="step-node" data-step="2">2</div>
+        <div class="step-node" data-step="3">3</div>
+        <div class="step-node" data-step="4">4</div>
+        <div class="step-node" data-step="5">5</div>
     </div>
 
-    <!-- Main Screen -->
-    <div id="mainScreen">
-        <div class="header">
-            <h1>Kim Service Center</h1>
-        </div>
-        <div class="menu-container">
-            <button class="main-button" onclick="showPage('graphicsPage')">
-                <span class="icon">🎨</span>
-                <span>Graphics Design</span>
-            </button>
-            <button class="main-button" onclick="showPage('editingPage')">
-                <span class="icon">🎬</span>
-                <span>Editing</span>
-            </button>
-            <button class="main-button" onclick="showPage('codingPage')">
-                <span class="icon">💻</span>
-                <span>Coding Service</span>
-            </button>
-            <button class="main-button" onclick="showPage('otherPage')">
-                <span class="icon">📦</span>
-                <span>Other Services</span>
-            </button>
-        </div>
-
-        <div class="bottom-bar">
-            <div class="history-trigger" onclick="showPage('historyPage')">🕒</div>
-        </div>
-    </div>
-
-    <!-- Graphics Design Page -->
-    <div id="graphicsPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Graphics Design</div>
-        <div class="service-grid" id="graphicsGrid"></div>
-    </div>
-
-    <!-- Graphics Detail Page -->
-    <div id="graphicsDetailPage" class="page">
-        <button class="back-btn" onclick="showPage('graphicsPage')">← Back</button>
-        <div class="page-title" id="graphicsDetailTitle">Logo Design</div>
-        <div class="caption-text" id="graphicsCaption">Logo Design Topic</div>
-
-        <div id="qualitySelection">
-            <div class="quality-list" id="qualityList">
-                <div class="quality-item" onclick="selectQuality(this, 3000)">Low Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 7000)">Normal Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 10000)">High Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 15000)">Ultra Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 30000)">Supreme Quality</div>
-            </div>
-
-            <div class="fee-box">
-                <div class="fee-label">Fee Box</div>
-                <div class="fee-value" id="feeDisplay">0 ks</div>
+    <!-- Step 1: Service Selection -->
+    <section id="step1" class="section active">
+        <div class="glass-card">
+            <h2 class="text-center mb-4">Select a Service</h2>
+            <div class="grid" id="categoryGrid">
+                <!-- Categories will be injected here -->
             </div>
         </div>
+    </section>
 
-        <label class="discretion-label">Discretion</label>
-        <textarea class="discretion-input" id="discretionInput" placeholder="Write in the form you want..."></textarea>
-
-        <div class="option-group">
-            <div class="option-btn" id="inspiredBtn" onclick="selectOption('inspired')">Inspired</div>
-            <div class="option-btn" id="customizeBtn" onclick="selectOption('customize')">Customize</div>
-        </div>
-
-        <div id="inspiredUpload" class="hidden" style="margin-bottom: 25px;">
-            <p style="font-size: 13px; margin-bottom: 10px; color: #666;">Add a design image to take as a reference:</p>
-            <input type="file" id="refImageInput" accept="image/*" style="width: 100%;">
-        </div>
-
-        <button class="confirm-btn" onclick="confirmOrder()">Order Confirm</button>
-
-        <hr>
-
-        <div class="page-title" style="font-size: 20px; margin-bottom: 15px;">Customize Fee & Design</div>
-        <div class="fee-box" style="background: #fff; border-style: solid;">
-            <div class="fee-label">Enter convenient price (ks)</div>
-            <input type="number" id="customFeeInput" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="0">
-        </div>
-        <button class="confirm-btn" style="background: var(--primary-purple);" onclick="confirmCustomOrder()">Order Confirm</button>
-    </div>
-
-    <!-- Editing Page -->
-    <div id="editingPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Editing Topic</div>
-
-        <div class="quality-list">
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Low', 10000, 15000)">
-                Low Quality <div class="editing-range">10000 - 15000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Normal', 20000, 30000)">
-                Normal Quality <div class="editing-range">20000 - 30000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'High', 35000, 45000)">
-                High Quality <div class="editing-range">35000 - 45000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Ultra', 50000, 70000)">
-                Ultra Quality <div class="editing-range">50000 - 70000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Supreme', 80000, 150000)">
-                Supreme Quality <div class="editing-range">80000 - 150000 ks</div>
+    <!-- Step 2: Sub-Service Selection -->
+    <section id="step2" class="section">
+        <div class="glass-card">
+            <button class="btn btn-outline mb-3" onclick="prevStep()">← Back</button>
+            <h2 id="serviceTitle" class="text-center">Select Type</h2>
+            <div class="grid" id="subServiceGrid">
+                <!-- Sub-services will be injected here -->
             </div>
         </div>
+    </section>
 
-        <div class="fee-box">
-            <div class="fee-label">Fee Box (Min 10000 ks)</div>
-            <input type="number" id="editingPriceInput" oninput="checkEditingPrice()" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="10000">
-            <div id="freeVideoNotice" class="hidden" style="color: #22c55e; font-size: 13px; margin-top: 8px; font-weight: 700;">🎁 SPECIAL: You get 1 Video for free!</div>
-        </div>
+    <!-- Step 3: Order Configuration -->
+    <section id="step3" class="section">
+        <div class="glass-card">
+            <button class="btn btn-outline mb-3" onclick="prevStep()">← Back</button>
+            <h2 class="text-center">Order Details</h2>
 
-        <div class="page-title" style="font-size: 20px; margin-top: 20px; margin-bottom: 15px;">Category</div>
-        <div class="category-grid">
-            <div class="category-btn" onclick="selectCategory(this)">UI/UX Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Motion Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Clean Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Text Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Graphics edit</div>
-        </div>
-
-        <button class="confirm-btn" onclick="confirmEditingOrder()">Confirm Order</button>
-    </div>
-
-    <!-- Coding Service Page -->
-    <div id="codingPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Coding Service Topic</div>
-
-        <div class="option-group">
-            <div class="option-btn" id="botServiceBtn" onclick="selectCodingType('Bot service')">Bot service</div>
-            <div class="option-btn" id="miniAppServiceBtn" onclick="selectCodingType('Mini App Service')">Mini App Service</div>
-            <div class="option-btn" id="customCodingBtn" onclick="selectCodingType('Custom')">Custom</div>
-        </div>
-
-        <div id="codingFeeSection" class="hidden">
-            <div class="quality-list" id="codingFeeList">
-                <div class="quality-item" onclick="selectCodingFee(this, 10000)">10000 ks (Normal)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 27000)">27000 ks (Mid)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 35000)">35000 ks (High)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 50000)">50000 ks (Advanced)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 'custom')">Custom</div>
+            <div id="graphicsModeToggle" class="mode-toggle hidden">
+                <div class="option-group">
+                    <button class="btn btn-outline active" onclick="setMode('manual')">Manual Mode</button>
+                    <button class="btn btn-outline" onclick="setMode('inspired')">Inspired Mode</button>
+                </div>
             </div>
 
-            <div id="customCodingFeeBox" class="fee-box hidden">
-                <div class="fee-label">Fee Box (Min 5000 ks)</div>
-                <input type="number" id="codingCustomFeeInput" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="5000">
-            </div>
+            <div class="form-container mt-4">
+                <div class="form-group">
+                    <label>Project Title</label>
+                    <input type="text" id="projectTitle" placeholder="Enter project name...">
+                </div>
 
-            <label class="discretion-label" style="margin-top: 20px;">Discretion</label>
-            <textarea class="discretion-input" id="codingDiscretionInput" maxlength="50000000" placeholder="Write your requirements (up to 50,000,000 characters)..."></textarea>
-
-            <button class="confirm-btn" onclick="confirmCodingOrder()">Confirm Order</button>
-        </div>
-    </div>
-
-    <!-- Other Services Page -->
-    <div id="otherPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: var(--primary-purple); font-weight: 700; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 20px;">🏗️</div>
-            <div style="font-size: 24px;">We are Updating</div>
-        </div>
-    </div>
-
-    <!-- History Page -->
-    <div id="historyPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Order History</div>
-        <div class="history-list" id="historyList"></div>
-    </div>
-
-    <!-- Receipt Popup -->
-    <div class="receipt-overlay" id="receiptOverlay">
-        <div class="receipt-card">
-            <div class="receipt-text" id="receiptMsg">Your Logo was Ordered</div>
-            <div style="font-size: 13px; color: #777; margin-top: 5px;">Wait for 2 seconds...</div>
-            <div class="circle-deco">✓</div>
-        </div>
-    </div>
-
-    <script>
-        const graphicsServices = [
-            "Logo Design", "Poster Design", "Banner Design", "Profile Design",
-            "Diamond List Design", "Thumbnail Design", "GFX Design",
-            "Clean Design", "Text Design", "Ads Design", "Contact"
-        ];
-
-        let state = {
-            currentService: null,
-            selectedFee: 0,
-            selectedOption: null,
-            selectedCategory: null,
-            orders: JSON.parse(localStorage.getItem('kim_orders') || '[]')
-        };
-
-        window.onload = () => {
-            const spots = document.getElementById('spotsContainer');
-            setTimeout(() => spots.classList.add('fade-out'), 1200);
-            setTimeout(() => {
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('mainScreen').style.display = 'block';
-            }, 3000);
-            renderGraphicsGrid();
-        };
-
-        function renderGraphicsGrid() {
-            const grid = document.getElementById('graphicsGrid');
-            graphicsServices.forEach(service => {
-                const btn = document.createElement('div');
-                btn.className = 'mini-button';
-                btn.innerText = service;
-                btn.onclick = () => {
-                    if (service === 'Contact') {
-                        window.open('https://t.me/your_telegram_link', '_blank');
-                        return;
-                    }
-                    openGraphicsDetail(service);
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById(pageId).classList.add('active');
-            window.scrollTo(0,0);
-            if (pageId === 'historyPage') renderHistory();
-        }
-
-        function showMain() {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('mainScreen').style.display = 'block';
-        }
-
-        function openGraphicsDetail(service) {
-            state.currentService = service;
-            state.selectedFee = 0;
-            state.selectedOption = null;
-            document.getElementById('graphicsDetailTitle').innerText = service;
-            document.getElementById('graphicsCaption').innerText = service + " Topic";
-            document.getElementById('feeDisplay').innerText = '0 ks';
-            document.getElementById('discretionInput').value = '';
-            document.getElementById('inspiredUpload').classList.add('hidden');
-            document.getElementById('customFeeInput').value = '';
-            document.querySelectorAll('.quality-item').forEach(i => i.classList.remove('selected'));
-            document.querySelectorAll('.option-btn').forEach(i => i.classList.remove('selected'));
-            showPage('graphicsDetailPage');
-        }
-
-        function selectQuality(el, fee) {
-            state.selectedFee = fee;
-            document.querySelectorAll('#qualityList .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('feeDisplay').innerText = fee.toLocaleString() + ' ks';
-        }
-
-        function selectOption(option) {
-            state.selectedOption = option;
-            document.querySelectorAll('.option-btn').forEach(i => i.classList.remove('selected'));
-            document.getElementById(option + 'Btn').classList.add('selected');
-            if (option === 'inspired') {
-                document.getElementById('inspiredUpload').classList.remove('hidden');
-            } else {
-                document.getElementById('inspiredUpload').classList.add('hidden');
-            }
-        }
-
-        function confirmOrder() {
-            const discretion = document.getElementById('discretionInput').value;
-            if (state.selectedFee === 0) return alert('Please select quality');
-            if (!discretion) return alert('Please write in Discretion (Required)');
-            if (!state.selectedOption) return alert('Please choose Inspired or Customize');
-            
-            let msg = 'Your ' + state.currentService + ' was Ordered';
-            if (state.currentService === 'Logo Design') msg = 'Your Logo was Ordered';
-            
-            processPayment(msg, state.selectedFee, state.currentService);
-        }
-
-        function confirmCustomOrder() {
-            const fee = parseInt(document.getElementById('customFeeInput').value);
-            const discretion = document.getElementById('discretionInput').value;
-            if (!fee || fee <= 0) return alert('Please enter a valid fee');
-            if (!discretion) return alert('Please write in Discretion (Required)');
-            if (!state.selectedOption) return alert('Please choose Inspired or Customize');
-
-            let msg = 'Your ' + state.currentService + ' was Ordered';
-            if (state.currentService === 'Logo Design') msg = 'Your Logo was Ordered';
-
-            processPayment(msg, fee, state.currentService);
-        }
-
-        let editingMin = 10000;
-        function selectEditingQuality(el, quality, min, max) {
-            editingMin = min;
-            document.querySelectorAll('#editingPage .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('editingPriceInput').value = min;
-            checkEditingPrice();
-        }
-
-        function checkEditingPrice() {
-            const price = parseInt(document.getElementById('editingPriceInput').value);
-            if (price >= 100000) {
-                document.getElementById('freeVideoNotice').classList.remove('hidden');
-            } else {
-                document.getElementById('freeVideoNotice').classList.add('hidden');
-            }
-        }
-
-        function selectCategory(el) {
-            state.selectedCategory = el.innerText;
-            document.querySelectorAll('.category-btn').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-        }
-
-        function confirmEditingOrder() {
-            const price = parseInt(document.getElementById('editingPriceInput').value);
-            if (!price || price < 10000) return alert('Minimum price is 10000 ks');
-            if (!state.selectedCategory) return alert('Please choose a category');
-            processPayment('Your Editing was Ordered', price, 'Editing (' + state.selectedCategory + ')');
-        }
-
-        let codingType = null;
-        function selectCodingType(type) {
-            codingType = type;
-            document.querySelectorAll('#codingPage .option-btn').forEach(i => i.classList.remove('selected'));
-            if (type === 'Bot service') document.getElementById('botServiceBtn').classList.add('selected');
-            if (type === 'Mini App Service') document.getElementById('miniAppServiceBtn').classList.add('selected');
-            if (type === 'Custom') document.getElementById('customCodingBtn').classList.add('selected');
-            document.getElementById('codingFeeSection').classList.remove('hidden');
-            document.querySelectorAll('#codingFeeList .quality-item').forEach(i => i.classList.remove('selected'));
-            document.getElementById('customCodingFeeBox').classList.add('hidden');
-            state.selectedFee = 0;
-        }
-
-        function selectCodingFee(el, fee) {
-            document.querySelectorAll('#codingFeeList .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            if (fee === 'custom') {
-                document.getElementById('customCodingFeeBox').classList.remove('hidden');
-                state.selectedFee = 'custom';
-            } else {
-                document.getElementById('customCodingFeeBox').classList.add('hidden');
-                state.selectedFee = fee;
-            }
-        }
-
-        function confirmCodingOrder() {
-            let fee = state.selectedFee;
-            if (fee === 'custom') {
-                fee = parseInt(document.getElementById('codingCustomFeeInput').value);
-            }
-            if (!fee || fee < 5000) return alert('Minimum fee is 5000 ks');
-            const discretion = document.getElementById('codingDiscretionInput').value;
-            if (!discretion) return alert('Please write in Discretion');
-            processPayment('Your Coding was Ordered', fee, codingType);
-        }
-
-        function processPayment(msg, fee, serviceName) {
-            const receiptInput = prompt('Please enter transfer receipt (Kpay or Wave pay reference)');
-            if (receiptInput === null) return;
-            showReceipt(msg);
-            const newOrder = {
-                id: Math.floor(Math.random() * 1000000),
-                service: serviceName,
-                fee: fee,
-                status: 'Pending',
-                date: new Date().toLocaleString()
-            };
-            state.orders.push(newOrder);
-            localStorage.setItem('kim_orders', JSON.stringify(state.orders));
-            setTimeout(() => { showMain(); }, 2000);
-        }
-
-        function showReceipt(msg) {
-            document.getElementById('receiptMsg').innerText = msg;
-            const overlay = document.getElementById('receiptOverlay');
-            overlay.style.display = 'flex';
-            setTimeout(() => { overlay.style.display = 'none'; }, 2000);
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            if (state.orders.length === 0) {
-                list.innerHTML = '<div style="text-align:center; color:#888; padding:50px 20px;">No orders yet</div>';
-                return;
-            }
-            state.orders.slice().reverse().forEach(order => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <span style="font-weight:700; color:var(--primary-purple); font-size:15px;">${order.service}</span>
-                        <span style="font-weight:700;">${order.fee.toLocaleString()} ks</span>
+                <div id="uploadContainer" class="form-group hidden">
+                    <label>Inspiration Image (Required)</label>
+                    <div class="upload-area" onclick="document.getElementById('refImage').click()">
+                        <span class="upload-icon">📸</span>
+                        <p>Drag & Drop or Click to Upload</p>
+                        <span class="file-info" id="refImageInfo">PNG, JPG, WEBP (Max 10MB)</span>
+                        <input type="file" id="refImage" accept="image/*" class="hidden" onchange="handleFile(this, 'refImageInfo')">
                     </div>
-                    <div style="font-size:12px; color:#777; margin-top:8px;">${order.date}</div>
-                    <div class="status-badge status-${order.status.toLowerCase()}">${order.status}</div>
-                `;
-                list.appendChild(item);
-            });
-        }
-    </script>
+                </div>
+
+                <div class="form-group">
+                    <label>Project Description (Required)</label>
+                    <textarea id="projectDesc" rows="5" placeholder="Describe your project in detail. Colors, style, target audience, preferred design direction, examples, and any special requests."></textarea>
+                </div>
+
+                <button class="btn btn-primary w-100" onclick="nextStep()">Continue to Summary</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Step 4: Order Summary -->
+    <section id="step4" class="section">
+        <div class="glass-card">
+            <button class="btn btn-outline mb-3" onclick="prevStep()">← Back</button>
+            <h2 class="text-center">Order Summary</h2>
+            <div id="summaryContent" class="mt-4">
+                <!-- Summary will be injected here -->
+            </div>
+            <button class="btn btn-primary w-100 mt-4" onclick="nextStep()">Select Payment Region</button>
+        </div>
+    </section>
+
+    <!-- Step 5: Payment & Verification -->
+    <section id="step5" class="section">
+        <div class="glass-card">
+            <button class="btn btn-outline mb-3" onclick="prevStep()">← Back</button>
+
+            <div id="paymentRegionSection">
+                <h2 class="text-center">Choose Payment Region</h2>
+                <div class="grid mt-4">
+                    <div class="service-card" onclick="selectRegion('local')">
+                        <span class="service-icon">🇲🇲</span>
+                        <span class="service-name">Local Payment</span>
+                        <p class="subtitle">KBZ Pay, Wave Pay, AYA Pay</p>
+                    </div>
+                    <div class="service-card" onclick="selectRegion('international')">
+                        <span class="service-icon">🌐</span>
+                        <span class="service-name">International Payment</span>
+                        <p class="subtitle">PayPal, Visa / Mastercard</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="paymentMethodsSection" class="hidden">
+                <h2 class="text-center">Select Payment Method</h2>
+                <div class="grid mt-4" id="methodsGrid">
+                    <!-- Methods injected here -->
+                </div>
+            </div>
+
+            <div id="paymentDetailSection" class="hidden">
+                <h2 class="text-center" id="methodTitle">Payment Details</h2>
+                <div class="payment-info-card mt-4">
+                    <div id="qrContainer" class="text-center mb-3">
+                        <!-- QR Code placeholder -->
+                         <div style="width: 150px; height: 150px; background: #eee; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 10px;">QR CODE</div>
+                    </div>
+                    <div class="text-center">
+                        <p id="accountName" style="font-weight: 700; font-size: 1.1rem;"></p>
+                        <p id="accountNumber" class="gradient-text" style="font-size: 1.5rem; letter-spacing: 2px;"></p>
+                    </div>
+                </div>
+
+                <div class="verification-form mt-4">
+                    <div class="form-group">
+                        <label>Payment Screenshot (Required)</label>
+                        <div class="upload-area" onclick="document.getElementById('payScreenshot').click()">
+                            <span class="upload-icon">📄</span>
+                            <p>Upload Screenshot</p>
+                            <span class="file-info" id="payScreenshotInfo">PNG, JPG (Max 10MB)</span>
+                            <input type="file" id="payScreenshot" accept="image/*" class="hidden" onchange="handleFile(this, 'payScreenshotInfo', 'payScreenshot')">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Transaction ID (Required)</label>
+                        <input type="text" id="transactionId" placeholder="Enter Transaction ID">
+                        <p class="subtitle" style="font-size: 0.75rem; color: var(--error); margin-top: 5px;">* Transaction ID is required for verification.</p>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="submitOrder()">Submit Order</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Screen -->
+    <section id="successStep" class="section">
+        <div class="glass-card text-center">
+            <div class="success-icon" style="font-size: 5rem; color: var(--success);">✓</div>
+            <h2 class="gradient-text">Order Successfully Submitted!</h2>
+            <p class="mt-3">Your order has been received and is pending verification.</p>
+            
+            <div class="order-id-box mt-4" style="background: var(--accent); padding: 20px; border-radius: 20px;">
+                <p class="subtitle">Order ID</p>
+                <h3 id="finalOrderId">---</h3>
+            </div>
+
+            <div class="mt-4">
+                <p>Estimated Delivery: <strong id="deliveryTime">3-5 Days</strong></p>
+            </div>
+
+            <div class="contact-links mt-4">
+                <a href="https://t.me/your_telegram" class="btn btn-outline">Contact Telegram</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<script src="script.js"></script>
 </body>
 </html>
