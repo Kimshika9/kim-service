@@ -25,6 +25,12 @@ To make the backend work, you need to create a Firebase project:
 ### 2. Hosting
 Upload `index.html`, `admin.html`, `style.css`, and `script.js` to your hosting provider (e.g., GitHub Pages).
 
+### 3. Custom Domain (.com)
+If you bought a custom domain (like `kimservice.com`):
+1. **GitHub Pages:** Go to your repo **Settings > Pages**.
+2. Under **Custom Domain**, type your domain name.
+3. In your Domain Registrar (Namecheap/GoDaddy), add **CNAME** and **A Records** pointing to GitHub's servers.
+
 ## 📁 File Structure
 - `index.html`: Main customer-facing website.
 - `admin.html`: Secure admin dashboard.
