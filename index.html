@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kim Service Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Kim Service Center | Premium Agency</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-purple: #6a0dad;
-            --light-purple: #a855f7;
-            --gradient-bg: linear-gradient(135deg, #6a0dad, #a855f7);
+            --primary: #6a0dad;
+            --primary-light: #a855f7;
+            --accent: #d8b4fe;
+            --bg-dark: #0f0a1e;
             --white: #ffffff;
-            --black: #000000;
-            --gray: #f8f9fa;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(135deg, #6a0dad, #a855f7);
+            --glow: 0 0 20px rgba(106, 13, 173, 0.4);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -20,464 +25,391 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background: var(--white);
-            color: var(--black);
+            background: #f8f7ff;
+            color: #1a1a1a;
             overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+            line-height: 1.6;
         }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes bubbleExpand { 0% { transform: scale(0.9); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes glowPulse { 0% { box-shadow: 0 0 5px var(--primary-light); } 50% { box-shadow: 0 0 20px var(--primary-light); } 100% { box-shadow: 0 0 5px var(--primary-light); } }
+
+        .fade-in { animation: fadeIn 0.6s ease forwards; }
+        .slide-up { animation: slideUp 0.5s ease forwards; }
+        .bubble { animation: bubbleExpand 0.4s ease-out forwards; }
 
         /* Loading Screen */
         #loadingScreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--gradient-bg);
+            inset: 0;
+            background: var(--bg-dark);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10000;
+            transition: opacity 0.8s ease;
         }
 
-        .loading-spots {
-            display: flex;
-            gap: 15px;
+        .loading-logo {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--white);
             margin-bottom: 20px;
+            text-shadow: 0 0 20px var(--primary-light);
         }
 
-        .spot {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--white);
-            animation: spotPulse 1.4s infinite ease-in-out;
+        .progress-bar-container {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        .spot:nth-child(2) { animation-delay: 0.2s; }
-        .spot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes spotPulse {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-            40% { transform: scale(1.2); opacity: 1; }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--gradient);
+            box-shadow: 0 0 15px var(--primary-light);
+            transition: width 0.3s;
         }
 
-        .loading-text {
-            color: var(--white);
-            font-weight: 700;
-            font-size: 26px;
-            opacity: 0;
-            position: absolute;
-            animation: textFade 2s forwards;
-            animation-delay: 1.5s;
-        }
-
-        @keyframes textFade {
-            0% { opacity: 0; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .spots-container.fade-out {
-            animation: fadeOutEffect 0.5s forwards;
-            animation-delay: 1.2s;
-        }
-
-        @keyframes fadeOutEffect {
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        /* Main Screen */
-        #mainScreen {
+        /* App Layout */
+        #app {
             display: none;
+            max-width: 500px;
+            margin: 0 auto;
             min-height: 100vh;
-            background: var(--white);
-            padding-bottom: 70px;
-        }
-
-        .header {
-            padding: 50px 20px;
-            background: var(--gradient-bg);
-            color: var(--white);
-            text-align: center;
-            border-bottom-left-radius: 35px;
-            border-bottom-right-radius: 35px;
-            box-shadow: 0 4px 15px rgba(106, 13, 173, 0.3);
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .menu-container {
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .main-button {
-            aspect-ratio: 1;
-            background: var(--gradient-bg);
-            border: none;
-            border-radius: 25px;
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(106, 13, 173, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .main-button:active {
-            transform: scale(0.96);
-            box-shadow: 0 5px 10px rgba(106, 13, 173, 0.2);
-        }
-
-        .main-button .icon {
-            font-size: 44px;
-        }
-
-        /* Sub Pages */
-        .page {
-            display: none;
-            padding: 20px;
-            min-height: 100vh;
+            position: relative;
             padding-bottom: 80px;
         }
 
-        .page.active {
-            display: block;
+        header {
+            padding: 40px 20px;
+            background: var(--gradient);
+            color: var(--white);
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 10px 25px rgba(106, 13, 173, 0.3);
+            margin-bottom: 30px;
         }
 
-        .back-btn {
-            background: var(--white);
-            border: 1.5px solid var(--primary-purple);
-            color: var(--primary-purple);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+        header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
-        .page-title {
-            color: var(--black);
-            font-size: 26px;
+        header p {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .container { padding: 0 20px; }
+
+        /* Typography */
+        .section-title {
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .caption-text {
-            color: var(--primary-purple);
-            text-align: center;
-            margin-top: -15px;
+            color: var(--primary);
             margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 500;
+            text-align: center;
         }
 
-        /* Grid for Services */
-        .service-grid {
+        /* Pricing Cards */
+        .category-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-bottom: 30px;
         }
 
-        .mini-button {
-            padding: 18px 10px;
+        .premium-card {
             background: var(--white);
-            border: 2px solid var(--primary-purple);
-            color: var(--primary-purple);
-            border-radius: 15px;
-            font-weight: 600;
-            font-size: 14px;
+            padding: 20px;
+            border-radius: 24px;
             text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid #f0edff;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-card:active { transform: scale(0.95); }
+        .premium-card:hover { border-color: var(--primary-light); box-shadow: var(--glow); }
+
+        .premium-card .icon { font-size: 32px; margin-bottom: 10px; display: block; }
+        .premium-card h3 { font-size: 15px; font-weight: 600; color: #333; }
+
+        /* Service Item List */
+        .service-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .service-item-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--primary);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        /* History Brochure Style */
+        .history-card {
+            background: var(--white);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .history-header {
+            background: #fafafa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+        }
+        .history-body {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-confirmed { background: #dcfce7; color: #16a34a; }
+
+        .service-item-card:hover { transform: translateX(5px); }
+
+        .service-info h4 { font-size: 16px; font-weight: 600; }
+        .service-info p { font-size: 12px; color: #666; }
+
+        .price-badge {
+            background: #f3e8ff;
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        /* Wizard/Steps Navigation */
+        .step-container { display: none; }
+        .step-container.active { display: block; animation: slideUp 0.5s ease; }
+
+        .wizard-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-        }
-
-        .mini-button:active {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        /* Quality Selection */
-        .quality-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .quality-item {
-            padding: 14px;
-            background: var(--white);
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--primary-purple);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .quality-item.selected {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        .fee-box {
-            margin: 25px 0;
-            padding: 20px;
-            background: var(--gray);
-            border: 2px dashed var(--primary-purple);
-            border-radius: 18px;
-            text-align: center;
-        }
-
-        .fee-label {
-            font-size: 15px;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .fee-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary-purple);
-        }
-
-        .discretion-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .discretion-input {
-            width: 100%;
-            height: 120px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            resize: none;
-            outline: none;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .discretion-input:focus {
-            border-color: var(--primary-purple);
-        }
-
-        .option-group {
-            display: flex;
             gap: 15px;
             margin-bottom: 25px;
         }
 
-        .option-btn {
-            flex: 1;
-            padding: 14px;
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            color: var(--primary-purple);
-            font-weight: 600;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .option-btn.selected {
-            background: var(--primary-purple);
-            color: var(--white);
-        }
-
-        .confirm-btn {
-            width: 100%;
-            padding: 18px;
-            background: #22c55e;
-            color: var(--white);
-            border: none;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 6px 15px rgba(34, 197, 94, 0.3);
-            transition: transform 0.2s;
-        }
-
-        .confirm-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Receipt Popup */
-        .receipt-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 11000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .receipt-card {
-            width: 280px;
-            background: var(--white);
-            padding: 35px 25px;
-            border-radius: 30px;
-            text-align: center;
-            position: relative;
-            animation: receiptPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-
-        @keyframes receiptPop {
-            from { transform: scale(0.7); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .receipt-card .circle-deco {
-            width: 50px;
-            height: 50px;
-            background: #22c55e;
+        .back-circle {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            margin: 20px auto 0;
+            background: #eee;
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 10px; color: #444; }
+
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            outline: none;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        textarea:focus, input:focus { border-color: var(--primary); }
+
+        .upload-area {
+            border: 2px dashed var(--accent);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            background: #faf9ff;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-area:hover { background: #f3e8ff; }
+
+        /* Payment Method Cards */
+        .payment-region-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .payment-card {
+            padding: 25px;
+            background: var(--white);
+            border-radius: 25px;
+            border: 2px solid #eee;
+            cursor: pointer;
+            transition: 0.4s;
+            text-align: center;
+        }
+
+        .payment-card.selected { border-color: var(--primary); box-shadow: var(--glow); background: #fdfcff; }
+
+        .qr-code { width: 180px; height: 180px; margin: 15px auto; background: #eee; border-radius: 10px; }
+
+        /* Buttons */
+        .btn-premium {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 20px;
+            background: var(--gradient);
             color: var(--white);
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
-        }
-
-        .receipt-text {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            color: var(--black);
-            margin-bottom: 5px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(106, 13, 173, 0.2);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        /* Bottom Bar */
-        .bottom-bar {
+        .btn-premium:active { transform: scale(0.98); }
+        .btn-premium:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Badge Styles */
+        .badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .badge-budget { background: #dcfce7; color: #16a34a; }
+        .badge-popular { background: #fef3c7; color: #d97706; }
+        .badge-premium { background: #ede9fe; color: #6d28d9; }
+        .badge-enterprise { background: #f3f4f6; color: #1f2937; }
+
+        /* Success screen */
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            background: #22c55e;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            animation: bubbleExpand 0.5s ease-out;
+        }
+
+        .summary-box {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .summary-row .label { color: #666; }
+        .summary-row .val { font-weight: 600; text-align: right; }
+
+        /* Bottom Nav */
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 70px;
             background: var(--white);
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid #eee;
             display: flex;
+            justify-content: space-around;
             align-items: center;
-            justify-content: center;
             z-index: 1000;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
         }
 
-        .history-trigger {
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--primary-purple);
-            background: #f3e8ff;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-        }
-
-        /* History */
-        .history-list {
+        .nav-item {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-        }
-
-        .history-item {
-            padding: 20px;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--primary-purple);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-            text-transform: uppercase;
-        }
-
-        .status-pending { background: #fffbeb; color: #d97706; }
-        .status-confirmed { background: #f0fdf4; color: #16a34a; }
-
-        /* Editing Section */
-        .editing-range {
-            font-size: 12px;
-            color: #777;
-            margin-top: 4px;
-        }
-
-        .category-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .category-btn {
-            padding: 15px;
-            border: 2px solid var(--primary-purple);
-            border-radius: 15px;
-            color: var(--primary-purple);
+            align-items: center;
+            gap: 4px;
+            color: #888;
+            font-size: 10px;
             font-weight: 600;
-            text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .category-btn.selected {
-            background: var(--primary-purple);
-            color: var(--white);
+        .nav-item.active { color: var(--primary); }
+        .nav-item .icon { font-size: 20px; }
+
+        .hidden { display: none; }
+
+        /* Ripple effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
         }
-
-        .hidden { display: none !important; }
-
-        hr {
-            border: 0;
-            border-top: 1px solid #eee;
-            margin: 30px 0;
+        .ripple:after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform .5s, opacity 1s;
+        }
+        .ripple:active:after {
+            transform: scale(0, 0);
+            opacity: .3;
+            transition: 0s;
         }
 
     </style>
@@ -486,419 +418,633 @@
 
     <!-- Loading Screen -->
     <div id="loadingScreen">
-        <div class="spots-container" id="spotsContainer">
-            <div class="loading-spots">
-                <div class="spot"></div>
-                <div class="spot"></div>
-                <div class="spot"></div>
-            </div>
+        <div class="loading-logo">KIM SERVICE</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressFill"></div>
         </div>
-        <div class="loading-text">Best Service Center</div>
+        <div style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 15px;">Setting up your premium experience...</div>
     </div>
 
-    <!-- Main Screen -->
-    <div id="mainScreen">
-        <div class="header">
-            <h1>Kim Service Center</h1>
-        </div>
-        <div class="menu-container">
-            <button class="main-button" onclick="showPage('graphicsPage')">
-                <span class="icon">🎨</span>
-                <span>Graphics Design</span>
-            </button>
-            <button class="main-button" onclick="showPage('editingPage')">
-                <span class="icon">🎬</span>
-                <span>Editing</span>
-            </button>
-            <button class="main-button" onclick="showPage('codingPage')">
-                <span class="icon">💻</span>
-                <span>Coding Service</span>
-            </button>
-            <button class="main-button" onclick="showPage('otherPage')">
-                <span class="icon">📦</span>
-                <span>Other Services</span>
-            </button>
-        </div>
+    <div id="app">
+        <!-- Home Screen -->
+        <div id="homePage" class="step-container active">
+            <header>
+                <h1>KIM SERVICE CENTER</h1>
+                <p>Premium Digital Agency Solutions</p>
+            </header>
 
-        <div class="bottom-bar">
-            <div class="history-trigger" onclick="showPage('historyPage')">🕒</div>
-        </div>
-    </div>
-
-    <!-- Graphics Design Page -->
-    <div id="graphicsPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Graphics Design</div>
-        <div class="service-grid" id="graphicsGrid"></div>
-    </div>
-
-    <!-- Graphics Detail Page -->
-    <div id="graphicsDetailPage" class="page">
-        <button class="back-btn" onclick="showPage('graphicsPage')">← Back</button>
-        <div class="page-title" id="graphicsDetailTitle">Logo Design</div>
-        <div class="caption-text" id="graphicsCaption">Logo Design Topic</div>
-
-        <div id="qualitySelection">
-            <div class="quality-list" id="qualityList">
-                <div class="quality-item" onclick="selectQuality(this, 3000)">Low Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 7000)">Normal Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 10000)">High Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 15000)">Ultra Quality</div>
-                <div class="quality-item" onclick="selectQuality(this, 30000)">Supreme Quality</div>
-            </div>
-
-            <div class="fee-box">
-                <div class="fee-label">Fee Box</div>
-                <div class="fee-value" id="feeDisplay">0 ks</div>
+            <div class="container">
+                <div class="section-title">Select Service</div>
+                <div class="category-grid" id="mainCategories">
+                    <!-- Categories will be injected -->
+                </div>
             </div>
         </div>
 
-        <label class="discretion-label">Discretion</label>
-        <textarea class="discretion-input" id="discretionInput" placeholder="Write in the form you want..."></textarea>
-
-        <div class="option-group">
-            <div class="option-btn" id="inspiredBtn" onclick="selectOption('inspired')">Inspired</div>
-            <div class="option-btn" id="customizeBtn" onclick="selectOption('customize')">Customize</div>
-        </div>
-
-        <div id="inspiredUpload" class="hidden" style="margin-bottom: 25px;">
-            <p style="font-size: 13px; margin-bottom: 10px; color: #666;">Add a design image to take as a reference:</p>
-            <input type="file" id="refImageInput" accept="image/*" style="width: 100%;">
-        </div>
-
-        <button class="confirm-btn" onclick="confirmOrder()">Order Confirm</button>
-
-        <hr>
-
-        <div class="page-title" style="font-size: 20px; margin-bottom: 15px;">Customize Fee & Design</div>
-        <div class="fee-box" style="background: #fff; border-style: solid;">
-            <div class="fee-label">Enter convenient price (ks)</div>
-            <input type="number" id="customFeeInput" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="0">
-        </div>
-        <button class="confirm-btn" style="background: var(--primary-purple);" onclick="confirmCustomOrder()">Order Confirm</button>
-    </div>
-
-    <!-- Editing Page -->
-    <div id="editingPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Editing Topic</div>
-
-        <div class="quality-list">
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Low', 10000, 15000)">
-                Low Quality <div class="editing-range">10000 - 15000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Normal', 20000, 30000)">
-                Normal Quality <div class="editing-range">20000 - 30000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'High', 35000, 45000)">
-                High Quality <div class="editing-range">35000 - 45000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Ultra', 50000, 70000)">
-                Ultra Quality <div class="editing-range">50000 - 70000 ks</div>
-            </div>
-            <div class="quality-item" onclick="selectEditingQuality(this, 'Supreme', 80000, 150000)">
-                Supreme Quality <div class="editing-range">80000 - 150000 ks</div>
+        <!-- Sub Services Selection -->
+        <div id="subServicePage" class="step-container">
+            <div class="container">
+                <div class="wizard-header">
+                    <div class="back-circle" onclick="goBack('homePage')">←</div>
+                    <div id="subServiceTitle" style="font-weight: 700; font-size: 18px;">Graphics Design</div>
+                </div>
+                <div class="service-list" id="subServiceList">
+                    <!-- Sub services will be injected -->
+                </div>
             </div>
         </div>
 
-        <div class="fee-box">
-            <div class="fee-label">Fee Box (Min 10000 ks)</div>
-            <input type="number" id="editingPriceInput" oninput="checkEditingPrice()" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="10000">
-            <div id="freeVideoNotice" class="hidden" style="color: #22c55e; font-size: 13px; margin-top: 8px; font-weight: 700;">🎁 SPECIAL: You get 1 Video for free!</div>
-        </div>
+        <!-- Order Configuration -->
+        <div id="configPage" class="step-container">
+            <div class="container">
+                <div class="wizard-header">
+                    <div class="back-circle" onclick="goBack('subServicePage')">←</div>
+                    <div style="font-weight: 700; font-size: 18px;">Order Details</div>
+                </div>
 
-        <div class="page-title" style="font-size: 20px; margin-top: 20px; margin-bottom: 15px;">Category</div>
-        <div class="category-grid">
-            <div class="category-btn" onclick="selectCategory(this)">UI/UX Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Motion Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Clean Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Text Edit</div>
-            <div class="category-btn" onclick="selectCategory(this)">Graphics edit</div>
-        </div>
+                <div id="modeSelection" class="hidden" style="margin-bottom: 25px;">
+                    <label>Order Mode</label>
+                    <div class="payment-region-grid">
+                        <div class="payment-card selected ripple" onclick="setMode('manual', this)">
+                            <div style="font-weight: 700;">Manual Mode</div>
+                            <div style="font-size: 12px; opacity: 0.7;">Define your requirements in text</div>
+                        </div>
+                        <div class="payment-card ripple" onclick="setMode('inspired', this)">
+                            <div style="font-weight: 700;">Inspired Mode</div>
+                            <div style="font-size: 12px; opacity: 0.7;">Upload a reference image</div>
+                        </div>
+                    </div>
+                </div>
 
-        <button class="confirm-btn" onclick="confirmEditingOrder()">Confirm Order</button>
-    </div>
+                <div class="form-group">
+                    <label>Project Title</label>
+                    <input type="text" id="orderTitle" placeholder="e.g. My Brand Logo">
+                </div>
 
-    <!-- Coding Service Page -->
-    <div id="codingPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Coding Service Topic</div>
+                <div class="form-group">
+                    <label>Project Description <span style="color: red;">*</span></label>
+                    <textarea id="orderDesc" placeholder="Describe your project in detail. Colors, style, target audience, preferred design direction, examples..."></textarea>
+                </div>
 
-        <div class="option-group">
-            <div class="option-btn" id="botServiceBtn" onclick="selectCodingType('Bot service')">Bot service</div>
-            <div class="option-btn" id="miniAppServiceBtn" onclick="selectCodingType('Mini App Service')">Mini App Service</div>
-            <div class="option-btn" id="customCodingBtn" onclick="selectCodingType('Custom')">Custom</div>
-        </div>
+                <div id="inspiredFields" class="hidden">
+                    <div class="form-group">
+                        <label>Inspiration Image <span style="color: red;">*</span></label>
+                        <div class="upload-area" onclick="document.getElementById('refFile').click()">
+                            <div style="font-size: 30px;">🖼️</div>
+                            <div id="refFileName">Upload Reference (PNG, JPG, WEBP)</div>
+                            <input type="file" id="refFile" class="hidden" accept="image/*" onchange="handleFile(this, 'refFileName')">
+                        </div>
+                    </div>
+                </div>
 
-        <div id="codingFeeSection" class="hidden">
-            <div class="quality-list" id="codingFeeList">
-                <div class="quality-item" onclick="selectCodingFee(this, 10000)">10000 ks (Normal)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 27000)">27000 ks (Mid)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 35000)">35000 ks (High)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 50000)">50000 ks (Advanced)</div>
-                <div class="quality-item" onclick="selectCodingFee(this, 'custom')">Custom</div>
+                <button class="btn-premium" onclick="proceedToSummary()">Continue</button>
             </div>
+        </div>
 
-            <div id="customCodingFeeBox" class="fee-box hidden">
-                <div class="fee-label">Fee Box (Min 5000 ks)</div>
-                <input type="number" id="codingCustomFeeInput" style="width: 100%; border: none; background: transparent; text-align: center; font-size: 26px; font-weight: 700; color: var(--primary-purple); outline: none;" placeholder="5000">
+        <!-- Order Summary -->
+        <div id="summaryPage" class="step-container">
+            <div class="container">
+                <div class="wizard-header">
+                    <div class="back-circle" onclick="goBack('configPage')">←</div>
+                    <div style="font-weight: 700; font-size: 18px;">Order Summary</div>
+                </div>
+
+                <div class="summary-box">
+                    <div class="summary-row"><span class="label">Service:</span><span class="val" id="sumService">Logo Design</span></div>
+                    <div class="summary-row"><span class="label">Mode:</span><span class="val" id="sumMode">Manual</span></div>
+                    <div class="summary-row"><span class="label">Starting Price:</span><span class="val" id="sumPrice">5,000 Ks</span></div>
+                    <div class="summary-row"><span class="label">Delivery Time:</span><span class="val">2 - 5 Days</span></div>
+                    <div class="summary-row" style="flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <span class="label">Project Description:</span>
+                        <span class="val" id="sumDesc" style="text-align: left; font-weight: 400; font-size: 13px; opacity: 0.8;"></span>
+                    </div>
+                    <div id="sumImagePreview" class="hidden" style="margin-top: 10px;">
+                        <span class="label">Inspiration Image:</span>
+                        <img id="sumImage" src="" style="width: 100%; border-radius: 10px; margin-top: 5px; border: 1px solid #eee;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Payment Region</label>
+                    <div class="payment-region-grid">
+                        <div class="payment-card ripple" id="localPayment" onclick="setRegion('local', this)">
+                            <div style="font-size: 24px;">🇲🇲</div>
+                            <div style="font-weight: 700; margin-top: 10px;">Local Payment</div>
+                        </div>
+                        <div class="payment-card ripple" id="intPayment" onclick="setRegion('int', this)">
+                            <div style="font-size: 24px;">🌎</div>
+                            <div style="font-weight: 700; margin-top: 10px;">International</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-premium" id="toPaymentBtn" onclick="proceedToPayment()" disabled>Proceed to Payment</button>
             </div>
-
-            <label class="discretion-label" style="margin-top: 20px;">Discretion</label>
-            <textarea class="discretion-input" id="codingDiscretionInput" maxlength="50000000" placeholder="Write your requirements (up to 50,000,000 characters)..."></textarea>
-
-            <button class="confirm-btn" onclick="confirmCodingOrder()">Confirm Order</button>
         </div>
-    </div>
 
-    <!-- Other Services Page -->
-    <div id="otherPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: var(--primary-purple); font-weight: 700; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 20px;">🏗️</div>
-            <div style="font-size: 24px;">We are Updating</div>
+        <!-- Payment Page -->
+        <div id="paymentPage" class="step-container">
+            <div class="container">
+                <div class="wizard-header">
+                    <div class="back-circle" onclick="goBack('summaryPage')">←</div>
+                    <div style="font-weight: 700; font-size: 18px;">Payment Verification</div>
+                </div>
+
+                <div id="paymentMethods" class="service-list" style="margin-bottom: 25px;">
+                    <!-- Payment Methods cards -->
+                </div>
+
+                <div id="paymentDetails" class="summary-box hidden">
+                    <div id="qrContainer" class="qr-code"></div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <div id="payAccName" style="font-weight: 700;">Account Name</div>
+                        <div id="payNumber" style="font-size: 18px; font-weight: 800; color: var(--primary);">09123456789</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Transaction ID <span style="color: red;">*</span></label>
+                    <input type="text" id="transId" placeholder="Enter Reference / Transaction ID">
+                    <p style="font-size: 11px; color: #d97706; margin-top: 5px;">Transaction ID is required for verification.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Screenshot <span style="color: red;">*</span></label>
+                    <div class="upload-area" onclick="document.getElementById('proofFile').click()">
+                        <div style="font-size: 30px;">📄</div>
+                        <div id="proofFileName">Upload Screenshot</div>
+                        <input type="file" id="proofFile" class="hidden" accept="image/*" onchange="handleFile(this, 'proofFileName')">
+                    </div>
+                </div>
+
+                <button class="btn-premium ripple" onclick="submitOrder()">Submit Order</button>
+            </div>
         </div>
-    </div>
 
-    <!-- History Page -->
-    <div id="historyPage" class="page">
-        <button class="back-btn" onclick="showMain()">← Back</button>
-        <div class="page-title">Order History</div>
-        <div class="history-list" id="historyList"></div>
-    </div>
+        <!-- Final Confirmation (Optional review before actual submit) -->
+        <!-- Success Screen -->
+        <div id="successPage" class="step-container">
+            <div class="container" style="text-align: center; padding-top: 50px;">
+                <div class="success-checkmark">✓</div>
+                <h2 style="font-weight: 800; margin-bottom: 10px;">Order Submitted!</h2>
+                <p style="color: #666; font-size: 14px; margin-bottom: 30px;">Your order has been sent to our team for verification.</p>
 
-    <!-- Receipt Popup -->
-    <div class="receipt-overlay" id="receiptOverlay">
-        <div class="receipt-card">
-            <div class="receipt-text" id="receiptMsg">Your Logo was Ordered</div>
-            <div style="font-size: 13px; color: #777; margin-top: 5px;">Wait for 2 seconds...</div>
-            <div class="circle-deco">✓</div>
+                <div class="summary-box">
+                    <div class="summary-row"><span class="label">Order ID:</span><span class="val" id="finalOrderId">#KS-12345</span></div>
+                    <div class="summary-row"><span class="label">Status:</span><span class="val" style="color: #d97706;">Pending Verification</span></div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <div style="font-weight: 700; margin-bottom: 10px;">Need Help?</div>
+                    <div class="payment-region-grid">
+                        <a href="https://t.me/kim_service" style="text-decoration: none;" class="payment-card ripple">
+                            <div>Telegram Support</div>
+                        </a>
+                    </div>
+                </div>
+
+                <button class="btn-premium" style="background: #eee; color: #333; box-shadow: none;" onclick="resetToHome()">Back to Home</button>
+            </div>
         </div>
+
+        <!-- History Page -->
+        <div id="historyPage" class="step-container">
+            <div class="container">
+                <div class="section-title">Order History</div>
+                <div class="service-list" id="historyList">
+                    <!-- History items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('homePage', this)">
+                <div class="icon">🏠</div>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('historyPage', this)">
+                <div class="icon">🕒</div>
+                <span>History</span>
+            </div>
+        </nav>
     </div>
 
     <script>
-        const graphicsServices = [
-            "Logo Design", "Poster Design", "Banner Design", "Profile Design",
-            "Diamond List Design", "Thumbnail Design", "GFX Design",
-            "Clean Design", "Text Design", "Ads Design", "Contact"
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // Theme Sync
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+
+        const categories = [
+            { id: 'graphics', name: 'Graphics Design', icon: '🎨', badge: 'Most Popular' },
+            { id: 'social', name: 'Social Media', icon: '📱', badge: 'Budget Friendly' },
+            { id: 'print', name: 'Print Design', icon: '🖨️', badge: 'Premium Choice' },
+            { id: 'product', name: 'Product Design', icon: '📦', badge: 'Premium Choice' },
+            { id: 'content', name: 'Content Creator', icon: '🎥', badge: 'Most Popular' },
+            { id: 'music', name: 'Music Design', icon: '🎵', badge: 'Budget Friendly' },
+            { id: 'editing', name: 'Editing Service', icon: '🎬', badge: 'Most Popular' },
+            { id: 'coding', name: 'Coding Service', icon: '💻', badge: 'Enterprise Solution' },
+            { id: 'marketing', name: 'Marketing', icon: '📈', badge: 'Enterprise Solution' },
+            { id: 'management', name: 'Management', icon: '🤝', badge: 'Enterprise Solution' },
+            { id: 'digital', name: 'Digital Products', icon: '💾', badge: 'Budget Friendly' }
         ];
 
-        let state = {
-            currentService: null,
-            selectedFee: 0,
-            selectedOption: null,
-            selectedCategory: null,
-            orders: JSON.parse(localStorage.getItem('kim_orders') || '[]')
+        const servicesData = {
+            graphics: [
+                { name: 'Monogram Logo', price: 5000 },
+                { name: 'Lettermark Logo', price: 5000 },
+                { name: 'Mascot Logo', price: 15000 },
+                { name: 'Emblem Logo', price: 10000 },
+                { name: 'Gaming Logo', price: 10000 },
+                { name: 'Business Card', price: 5000 },
+                { name: 'Brand Identity', price: 30000 },
+                { name: 'Brand Guideline', price: 30000 },
+                { name: 'Company Profile', price: 30000 },
+                { name: 'Brand Kit', price: 50000 }
+            ],
+            social: [
+                { name: 'Facebook Post', price: 5000 },
+                { name: 'Facebook Cover', price: 5000 },
+                { name: 'Facebook Ads', price: 5000 },
+                { name: 'Instagram Post', price: 5000 },
+                { name: 'Instagram Story', price: 5000 },
+                { name: 'TikTok Cover', price: 5000 },
+                { name: 'Telegram Post', price: 5000 },
+                { name: 'Telegram Banner', price: 10000 },
+                { name: 'YouTube Thumbnail', price: 5000 },
+                { name: 'YouTube Banner', price: 10000 }
+            ],
+            print: [
+                { name: 'Poster Design', price: 10000 },
+                { name: 'Flyer Design', price: 10000 },
+                { name: 'Brochure', price: 15000 },
+                { name: 'Pamphlet', price: 10000 },
+                { name: 'Menu Design', price: 10000 },
+                { name: 'Billboard Design', price: 30000 }
+            ],
+            editing: [
+                { name: 'Short Video Edit', price: 5000 },
+                { name: 'Gaming Montage', price: 15000 },
+                { name: 'Music Video Editing', price: 20000 },
+                { name: 'Documentary Editing', price: 30000 },
+                { name: 'VFX Editing', price: 30000 },
+                { name: 'Motion Graphics', price: 30000 }
+            ],
+            coding: [
+                { name: 'Python Script', price: 10000 },
+                { name: 'Telegram Bot', price: 20000 },
+                { name: 'Website Development', price: 50000 },
+                { name: 'Android Application', price: 100000 },
+                { name: 'SaaS Development', price: 500000 },
+                { name: 'Custom Software', price: 200000 }
+            ],
+            marketing: [
+                { name: 'Content Planning', price: 10000 },
+                { name: 'Brand Strategy', price: 50000 },
+                { name: 'Marketing Audit', price: 30000 },
+                { name: 'Full Marketing Plan', price: 100000 }
+            ],
+            management: [
+                { name: 'Social Media Mgmt', price: 50000 },
+                { name: 'Community Mgmt', price: 50000 },
+                { name: 'Business Operations', price: 100000 }
+            ],
+            digital: [
+                { name: 'Prompt Pack', price: 5000 },
+                { name: 'Website Template', price: 30000 },
+                { name: 'UI Kit', price: 10000 }
+            ],
+            product: [
+                { name: 'Packaging Design', price: 20000 },
+                { name: 'Label Design', price: 10000 },
+                { name: 'Product Mockup', price: 5000 },
+                { name: '3D Product Design', price: 50000 }
+            ],
+            content: [
+                { name: 'Script Writing', price: 5000 },
+                { name: 'Voice Over', price: 10000 },
+                { name: 'Video Intro/Outro', price: 10000 },
+                { name: 'Subtitles/Captions', price: 5000 }
+            ],
+            music: [
+                { name: 'Background Music', price: 15000 },
+                { name: 'Sound Design', price: 10000 },
+                { name: 'Audio Editing', price: 5000 },
+                { name: 'Podcast Editing', price: 15000 }
+            ]
         };
 
+        const paymentMethods = {
+            local: [
+                { name: 'KBZ Pay', number: '09 770 123 456', acc: 'KIM SERVICE', qr: 'kbz_qr.png' },
+                { name: 'Wave Pay', number: '09 770 123 456', acc: 'KIM SERVICE', qr: 'wave_qr.png' },
+                { name: 'AYA Pay', number: '09 770 123 456', acc: 'KIM SERVICE', qr: 'aya_qr.png' }
+            ],
+            int: [
+                { name: 'PayPal', number: 'kimservice@agency.com', acc: 'Business Payment', qr: '' },
+                { name: 'Visa / Mastercard', number: 'Pay via Link', acc: 'Stripe Ready', qr: '' }
+            ]
+        };
+
+        let currentOrder = {
+            category: null,
+            service: null,
+            price: 0,
+            mode: 'manual',
+            title: '',
+            desc: '',
+            refImage: null,
+            region: null,
+            method: null,
+            transId: '',
+            proof: null
+        };
+
+        // App Initialization
         window.onload = () => {
-            const spots = document.getElementById('spotsContainer');
-            setTimeout(() => spots.classList.add('fade-out'), 1200);
-            setTimeout(() => {
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('mainScreen').style.display = 'block';
-            }, 3000);
-            renderGraphicsGrid();
+            let progress = 0;
+            const fill = document.getElementById('progressFill');
+            const interval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    document.getElementById('loadingScreen').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loadingScreen').style.display = 'none';
+                        document.getElementById('app').style.display = 'block';
+                        renderCategories();
+                    }, 800);
+                }
+                fill.style.width = progress + '%';
+            }, 200);
         };
 
-        function renderGraphicsGrid() {
-            const grid = document.getElementById('graphicsGrid');
-            graphicsServices.forEach(service => {
-                const btn = document.createElement('div');
-                btn.className = 'mini-button';
-                btn.innerText = service;
-                btn.onclick = () => {
-                    if (service === 'Contact') {
-                        window.open('https://t.me/your_telegram_link', '_blank');
-                        return;
+        function renderCategories() {
+            const grid = document.getElementById('mainCategories');
+            grid.innerHTML = categories.map(cat => `
+                <div class="premium-card ripple" onclick="selectCategory('${cat.id}')">
+                    <span class="badge ${getBadgeClass(cat.badge)}">${cat.badge}</span>
+                    <span class="icon">${cat.icon}</span>
+                    <h3>${cat.name}</h3>
+                </div>
+            `).join('');
+        }
+
+        function getBadgeClass(text) {
+            if (text.includes('Budget')) return 'badge-budget';
+            if (text.includes('Popular')) return 'badge-popular';
+            if (text.includes('Premium')) return 'badge-premium';
+            return 'badge-enterprise';
+        }
+
+        function selectCategory(id) {
+            currentOrder.category = id;
+            const categoryName = categories.find(c => c.id === id).name;
+            document.getElementById('subServiceTitle').innerText = categoryName;
+
+            const list = document.getElementById('subServiceList');
+            const data = servicesData[id] || [];
+            list.innerHTML = data.map(s => `
+                <div class="service-item-card ripple" onclick="selectSubService('${s.name}', ${s.price})">
+                    <div class="service-info">
+                        <h4>${s.name}</h4>
+                        <p>Starting From Price</p>
+                    </div>
+                    <div class="price-badge">${s.price.toLocaleString()} Ks</div>
+                </div>
+            `).join('');
+
+            showStep('subServicePage');
+        }
+
+        function selectSubService(name, price) {
+            currentOrder.service = name;
+            currentOrder.price = price;
+
+            // Graphics Design only has Inspired Mode
+            if (currentOrder.category === 'graphics' || currentOrder.category === 'social' || currentOrder.category === 'print' || currentOrder.category === 'product' || currentOrder.category === 'content' || currentOrder.category === 'music') {
+                document.getElementById('modeSelection').classList.remove('hidden');
+            } else {
+                document.getElementById('modeSelection').classList.add('hidden');
+                currentOrder.mode = 'manual';
+            }
+
+            showStep('configPage');
+        }
+
+        function setMode(mode, el) {
+            currentOrder.mode = mode;
+            el.parentElement.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+
+            if (mode === 'inspired') {
+                document.getElementById('inspiredFields').classList.remove('hidden');
+            } else {
+                document.getElementById('inspiredFields').classList.add('hidden');
+            }
+        }
+
+        function handleFile(input, targetId) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById(targetId).innerText = file.name;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (targetId === 'refFileName') {
+                        currentOrder.refImage = e.target.result;
+                    } else if (targetId === 'proofFileName') {
+                        currentOrder.proof = e.target.result;
                     }
-                    openGraphicsDetail(service);
                 };
-                grid.appendChild(btn);
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function proceedToSummary() {
+            currentOrder.title = document.getElementById('orderTitle').value;
+            currentOrder.desc = document.getElementById('orderDesc').value;
+
+            if (!currentOrder.desc) return alert('Description is required!');
+            if (currentOrder.mode === 'inspired' && !currentOrder.refImage) return alert('Reference image is required for Inspired Mode!');
+
+            document.getElementById('sumService').innerText = currentOrder.service;
+            document.getElementById('sumMode').innerText = currentOrder.mode.charAt(0).toUpperCase() + currentOrder.mode.slice(1);
+            document.getElementById('sumPrice').innerText = currentOrder.price.toLocaleString() + ' Ks';
+            document.getElementById('sumDesc').innerText = currentOrder.desc;
+
+            if (currentOrder.mode === 'inspired' && currentOrder.refImage) {
+                document.getElementById('sumImagePreview').classList.remove('hidden');
+                document.getElementById('sumImage').src = currentOrder.refImage;
+            } else {
+                document.getElementById('sumImagePreview').classList.add('hidden');
+            }
+
+            showStep('summaryPage');
+        }
+
+        function setRegion(reg, el) {
+            currentOrder.region = reg;
+            el.parentElement.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('toPaymentBtn').disabled = false;
+        }
+
+        function proceedToPayment() {
+            const list = document.getElementById('paymentMethods');
+            const methods = paymentMethods[currentOrder.region];
+            list.innerHTML = methods.map((m, index) => `
+                <div class="payment-card ripple" onclick="selectPaymentMethod(${index})">
+                    <div style="font-weight: 700;">${m.name}</div>
+                </div>
+            `).join('');
+
+            showStep('paymentPage');
+        }
+
+        function selectPaymentMethod(index) {
+            const m = paymentMethods[currentOrder.region][index];
+            currentOrder.method = m.name;
+
+            document.getElementById('paymentDetails').classList.remove('hidden');
+            document.getElementById('payAccName').innerText = m.acc;
+            document.getElementById('payNumber').innerText = m.number;
+
+            // Mark method selected
+            document.querySelectorAll('#paymentMethods .payment-card').forEach((c, i) => {
+                if (i === index) c.classList.add('selected');
+                else c.classList.remove('selected');
             });
         }
 
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById(pageId).classList.add('active');
-            window.scrollTo(0,0);
-            if (pageId === 'historyPage') renderHistory();
-        }
+        function submitOrder() {
+            currentOrder.transId = document.getElementById('transId').value;
+            if (!currentOrder.transId) return alert('Transaction ID is required!');
+            if (!currentOrder.proof) return alert('Payment Screenshot is required!');
 
-        function showMain() {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('mainScreen').style.display = 'block';
-        }
+            // Simulate submission
+            const orderId = 'KS-' + Math.floor(Math.random() * 90000 + 10000);
+            document.getElementById('finalOrderId').innerText = '#' + orderId;
 
-        function openGraphicsDetail(service) {
-            state.currentService = service;
-            state.selectedFee = 0;
-            state.selectedOption = null;
-            document.getElementById('graphicsDetailTitle').innerText = service;
-            document.getElementById('graphicsCaption').innerText = service + " Topic";
-            document.getElementById('feeDisplay').innerText = '0 ks';
-            document.getElementById('discretionInput').value = '';
-            document.getElementById('inspiredUpload').classList.add('hidden');
-            document.getElementById('customFeeInput').value = '';
-            document.querySelectorAll('.quality-item').forEach(i => i.classList.remove('selected'));
-            document.querySelectorAll('.option-btn').forEach(i => i.classList.remove('selected'));
-            showPage('graphicsDetailPage');
-        }
-
-        function selectQuality(el, fee) {
-            state.selectedFee = fee;
-            document.querySelectorAll('#qualityList .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('feeDisplay').innerText = fee.toLocaleString() + ' ks';
-        }
-
-        function selectOption(option) {
-            state.selectedOption = option;
-            document.querySelectorAll('.option-btn').forEach(i => i.classList.remove('selected'));
-            document.getElementById(option + 'Btn').classList.add('selected');
-            if (option === 'inspired') {
-                document.getElementById('inspiredUpload').classList.remove('hidden');
-            } else {
-                document.getElementById('inspiredUpload').classList.add('hidden');
-            }
-        }
-
-        function confirmOrder() {
-            const discretion = document.getElementById('discretionInput').value;
-            if (state.selectedFee === 0) return alert('Please select quality');
-            if (!discretion) return alert('Please write in Discretion (Required)');
-            if (!state.selectedOption) return alert('Please choose Inspired or Customize');
-            
-            let msg = 'Your ' + state.currentService + ' was Ordered';
-            if (state.currentService === 'Logo Design') msg = 'Your Logo was Ordered';
-            
-            processPayment(msg, state.selectedFee, state.currentService);
-        }
-
-        function confirmCustomOrder() {
-            const fee = parseInt(document.getElementById('customFeeInput').value);
-            const discretion = document.getElementById('discretionInput').value;
-            if (!fee || fee <= 0) return alert('Please enter a valid fee');
-            if (!discretion) return alert('Please write in Discretion (Required)');
-            if (!state.selectedOption) return alert('Please choose Inspired or Customize');
-
-            let msg = 'Your ' + state.currentService + ' was Ordered';
-            if (state.currentService === 'Logo Design') msg = 'Your Logo was Ordered';
-
-            processPayment(msg, fee, state.currentService);
-        }
-
-        let editingMin = 10000;
-        function selectEditingQuality(el, quality, min, max) {
-            editingMin = min;
-            document.querySelectorAll('#editingPage .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('editingPriceInput').value = min;
-            checkEditingPrice();
-        }
-
-        function checkEditingPrice() {
-            const price = parseInt(document.getElementById('editingPriceInput').value);
-            if (price >= 100000) {
-                document.getElementById('freeVideoNotice').classList.remove('hidden');
-            } else {
-                document.getElementById('freeVideoNotice').classList.add('hidden');
-            }
-        }
-
-        function selectCategory(el) {
-            state.selectedCategory = el.innerText;
-            document.querySelectorAll('.category-btn').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-        }
-
-        function confirmEditingOrder() {
-            const price = parseInt(document.getElementById('editingPriceInput').value);
-            if (!price || price < 10000) return alert('Minimum price is 10000 ks');
-            if (!state.selectedCategory) return alert('Please choose a category');
-            processPayment('Your Editing was Ordered', price, 'Editing (' + state.selectedCategory + ')');
-        }
-
-        let codingType = null;
-        function selectCodingType(type) {
-            codingType = type;
-            document.querySelectorAll('#codingPage .option-btn').forEach(i => i.classList.remove('selected'));
-            if (type === 'Bot service') document.getElementById('botServiceBtn').classList.add('selected');
-            if (type === 'Mini App Service') document.getElementById('miniAppServiceBtn').classList.add('selected');
-            if (type === 'Custom') document.getElementById('customCodingBtn').classList.add('selected');
-            document.getElementById('codingFeeSection').classList.remove('hidden');
-            document.querySelectorAll('#codingFeeList .quality-item').forEach(i => i.classList.remove('selected'));
-            document.getElementById('customCodingFeeBox').classList.add('hidden');
-            state.selectedFee = 0;
-        }
-
-        function selectCodingFee(el, fee) {
-            document.querySelectorAll('#codingFeeList .quality-item').forEach(i => i.classList.remove('selected'));
-            el.classList.add('selected');
-            if (fee === 'custom') {
-                document.getElementById('customCodingFeeBox').classList.remove('hidden');
-                state.selectedFee = 'custom';
-            } else {
-                document.getElementById('customCodingFeeBox').classList.add('hidden');
-                state.selectedFee = fee;
-            }
-        }
-
-        function confirmCodingOrder() {
-            let fee = state.selectedFee;
-            if (fee === 'custom') {
-                fee = parseInt(document.getElementById('codingCustomFeeInput').value);
-            }
-            if (!fee || fee < 5000) return alert('Minimum fee is 5000 ks');
-            const discretion = document.getElementById('codingDiscretionInput').value;
-            if (!discretion) return alert('Please write in Discretion');
-            processPayment('Your Coding was Ordered', fee, codingType);
-        }
-
-        function processPayment(msg, fee, serviceName) {
-            const receiptInput = prompt('Please enter transfer receipt (Kpay or Wave pay reference)');
-            if (receiptInput === null) return;
-            showReceipt(msg);
-            const newOrder = {
-                id: Math.floor(Math.random() * 1000000),
-                service: serviceName,
-                fee: fee,
-                status: 'Pending',
-                date: new Date().toLocaleString()
+            // Send data to Telegram Bot (Admin notification)
+            const orderPayload = {
+                orderId: orderId,
+                service: currentOrder.service,
+                price: currentOrder.price,
+                description: currentOrder.desc,
+                transactionId: currentOrder.transId,
+                timestamp: new Date().toISOString()
             };
-            state.orders.push(newOrder);
-            localStorage.setItem('kim_orders', JSON.stringify(state.orders));
-            setTimeout(() => { showMain(); }, 2000);
+
+            try {
+                tg.sendData(JSON.stringify(orderPayload));
+            } catch (e) {
+                console.log("Send data only works when opened from a keyboard button.", orderPayload);
+            }
+
+            // Save to history
+            const history = JSON.parse(localStorage.getItem('kim_history') || '[]');
+            history.push({
+                id: orderId,
+                service: currentOrder.service,
+                price: currentOrder.price,
+                date: new Date().toLocaleDateString(),
+                status: 'Pending Verification'
+            });
+            localStorage.setItem('kim_history', JSON.stringify(history));
+
+            showStep('successPage');
         }
 
-        function showReceipt(msg) {
-            document.getElementById('receiptMsg').innerText = msg;
-            const overlay = document.getElementById('receiptOverlay');
-            overlay.style.display = 'flex';
-            setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+        function showStep(id) {
+            document.querySelectorAll('.step-container').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0,0);
+
+            // Back button handling
+            if (id === 'homePage' || id === 'historyPage') {
+                tg.BackButton.hide();
+            } else {
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => {
+                    if (id === 'subServicePage') showStep('homePage');
+                    else if (id === 'configPage') showStep('subServicePage');
+                    else if (id === 'summaryPage') showStep('configPage');
+                    else if (id === 'paymentPage') showStep('summaryPage');
+                    else if (id === 'successPage') showStep('homePage');
+                    tg.BackButton.offClick();
+                });
+            }
+        }
+
+        function goBack(target) { showStep(target); }
+
+        function resetToHome() {
+            currentOrder = {
+                category: null, service: null, price: 0, mode: 'manual', title: '', desc: '',
+                refImage: null, region: null, method: null, transId: '', proof: null
+            };
+            document.getElementById('orderTitle').value = '';
+            document.getElementById('orderDesc').value = '';
+            document.getElementById('refFileName').innerText = 'Upload Reference (PNG, JPG, WEBP)';
+            document.getElementById('transId').value = '';
+            document.getElementById('proofFileName').innerText = 'Upload Screenshot';
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelector('.nav-item').classList.add('active');
+            showStep('homePage');
+        }
+
+        function switchTab(id, el) {
+            if (id === 'homePage') {
+                // Reset order data when going home
+                currentOrder = {
+                    category: null, service: null, price: 0, mode: 'manual', title: '', desc: '',
+                    refImage: null, region: null, method: null, transId: '', proof: null
+                };
+                document.getElementById('orderTitle').value = '';
+                document.getElementById('orderDesc').value = '';
+                document.getElementById('refFileName').innerText = 'Upload Reference (PNG, JPG, WEBP)';
+                document.getElementById('transId').value = '';
+                document.getElementById('proofFileName').innerText = 'Upload Screenshot';
+            }
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            showStep(id);
+            if (id === 'historyPage') renderHistory();
         }
 
         function renderHistory() {
             const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            if (state.orders.length === 0) {
-                list.innerHTML = '<div style="text-align:center; color:#888; padding:50px 20px;">No orders yet</div>';
+            const history = JSON.parse(localStorage.getItem('kim_history') || '[]');
+            if (history.length === 0) {
+                list.innerHTML = '<div style="text-align:center; margin-top:50px; opacity:0.5;">No orders yet</div>';
                 return;
             }
-            state.orders.slice().reverse().forEach(order => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <span style="font-weight:700; color:var(--primary-purple); font-size:15px;">${order.service}</span>
-                        <span style="font-weight:700;">${order.fee.toLocaleString()} ks</span>
+            list.innerHTML = history.slice().reverse().map(h => `
+                <div class="history-card slide-up">
+                    <div class="history-header">
+                        <span>ID: ${h.id}</span>
+                        <span>${h.date}</span>
                     </div>
-                    <div style="font-size:12px; color:#777; margin-top:8px;">${order.date}</div>
-                    <div class="status-badge status-${order.status.toLowerCase()}">${order.status}</div>
-                `;
-                list.appendChild(item);
-            });
+                    <div class="history-body">
+                        <div class="service-info">
+                            <h4 style="font-size: 15px; font-weight: 700;">${h.service}</h4>
+                            <div class="status-badge ${h.status.toLowerCase().includes('pending') ? 'status-pending' : 'status-confirmed'}" style="margin-top: 8px; display: inline-block;">
+                                ${h.status}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; color: var(--primary); font-size: 16px;">${h.price.toLocaleString()} Ks</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
     </script>
 </body>
