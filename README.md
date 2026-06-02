@@ -1,54 +1,51 @@
-# Kim Service Center - Telegram Mini App
+# Caizar Store - Luxury Telegram Mini App
 
-This project is a Telegram Mini App designed to run on **Pydroid 3** and be integrated into a Telegram Bot.
-
-## 📋 Requirements
-- **Pydroid 3** (Android App)
-- **Telegram Account**
-- **Hosting** (Telegram requires an `https://` link. You can use **GitHub Pages** for free).
-- **Library:** `pyTelegramBotAPI` (Only if you want to run the bot script).
-
----
-
-## 🚀 Step 1: Run Locally on Pydroid 3
-To test the design on your phone before putting it on Telegram:
-1. Copy `index.html` and `main.py` into the same folder in Pydroid 3.
-2. Run `main.py`.
-3. Open your mobile browser and go to: `http://localhost:8080`
-
----
-
-## 🌐 Step 2: Host Your App (Mandatory for Telegram)
-Telegram cannot see your `localhost`. You must host the `index.html` file online.
-1. Create a free account on **GitHub**.
-2. Create a new repository named `kim-service`.
-3. Upload **only** the `index.html` file.
-4. Go to **Settings > Pages** and set the branch to `main`.
-5. You will get a link like: `https://yourusername.github.io/kim-service/`
-
----
-
-## 🤖 Step 3: Create the Telegram Mini App
-1. Message **@BotFather** on Telegram.
-2. Send `/newbot` and follow instructions to get your **Bot Token**.
-3. Send `/newapp`, select your bot.
-4. For the **URL**, paste your GitHub Pages link from Step 2.
-5. Send `/mybots`, select your bot, go to **Bot Settings > Menu Button**.
-6. Set the type to **Web App** and paste your URL again.
-
----
-
-## 🐍 Step 4: Run the Bot (Optional)
-If you want your bot to send a "Welcome" message with a button to open the app:
-1. In Pydroid 3, go to **Pip** and install `pyTelegramBotAPI`.
-2. Open `bot.py`.
-3. Replace `'YOUR_BOT_TOKEN_HERE'` with the token from BotFather.
-4. Replace `'YOUR_MINI_APP_URL_HERE'` with your GitHub Pages link.
-5. Run `bot.py`.
-
----
+This is a premium "Luxury & Classic" Telegram Mini App for Boost Services. It is optimized for mobile performance and features a deep blue theme with JetBrains Mono typography.
 
 ## 📁 File Structure
-- `index.html`: The main app code (UI/Logic).
-- `main.py`: Local server for testing in Pydroid 3.
-- `bot.py`: Simple Python bot to launch the app.
+- `index.html`: The main entry point.
+- `css/`: Stylesheets for layout, components, and animations.
+- `js/`: Application logic, routing, and security.
+- `assets/`: Icons, posters, and font files.
+- `main.py`: Local HTTP server for testing in Pydroid 3.
+- `bot.py`: Telegram Bot script to launch the Mini App.
+
+---
+
+## 🚀 Step 1: Local Testing (Pydroid 3)
+To see your app running on your phone before publishing:
+1. Ensure all folders (`css`, `js`, `assets`) are in the same directory as `main.py`.
+2. Run `main.py` in Pydroid 3.
+3. Open your mobile browser to: `http://localhost:8080`
+
+---
+
+## 🌐 Step 2: Getting your Web Link (Hosting)
+Telegram requires an **HTTPS** link. You can host this project for free:
+
+### Option A: GitHub Pages (Recommended)
+1. Create a [GitHub](https://github.com) account.
+2. Create a new **Public Repository** named `caizar-store`.
+3. Upload all files and folders (`index.html`, `css/`, `js/`, `assets/`).
+4. Go to **Settings > Pages**.
+5. Under "Build and deployment", set Source to **Deploy from a branch** and select `main`.
+6. After a minute, GitHub will give you a link like: `https://yourusername.github.io/caizar-store/`
+
+---
+
+## 🤖 Step 3: Connect to Telegram
+1. Open Telegram and search for **@BotFather**.
+2. Create a new bot: `/newbot` → Name it "Caizar Store Bot" → Get your **API Token**.
+3. Create the Mini App: `/newapp` → Select your bot.
+4. **Title:** Caizar Store
+5. **Description:** Premium Boost Service Shop.
+6. **URL:** Paste your GitHub Pages link (from Step 2).
+7. **Short Name:** `caizar` (this creates `t.me/yourbot/caizar`).
+
+---
+
+## 🐍 Step 4: Configure the Bot Launcher
+1. Open `bot.py` in Pydroid 3.
+2. Replace `YOUR_BOT_TOKEN` with the token from BotFather.
+3. Replace `YOUR_MINI_APP_URL` with your GitHub link.
+4. Run `bot.py`. Now, when users type `/start`, they will see a "Open Caizar Store" button.
