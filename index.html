@@ -1,247 +1,719 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Caizar Store</title>
-    <!-- Monospace Font -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/components.css">
+    <title>Who is the cutest girl?</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Google Fonts: Quicksand & Padauk for Burmese support -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Quicksand', 'Padauk', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #FFB6C1 0%, #E63946 50%, #8B0000 100%);
+            color: #FFFFFF;
+            position: relative;
+        }
+
+        /* Canvas / Background Floating Elements */
+        .bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .floating-heart {
+            position: absolute;
+            bottom: -50px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 20px;
+            animation: floatUp linear infinite;
+            filter: drop-shadow(0 0 6px rgba(255, 182, 193, 0.6));
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(0.8);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.8;
+            }
+            85% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-110vh) rotate(360deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container & Screens */
+        .app-viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease-out;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.92);
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* Glass Card Base Style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 35px 25px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25),
+                        inset 0 0 15px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* 1. LOADING SCREEN */
+        #loadingScreen .glass-card {
+            animation: cardEntrance 0.8s ease-out forwards;
+        }
+
+        .loading-heart {
+            font-size: 65px;
+            display: inline-block;
+            animation: pulseFloating 1.8s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px rgba(255, 105, 180, 0.8));
+            position: relative;
+        }
+
+        .sparkle-icon {
+            position: absolute;
+            font-size: 20px;
+            animation: sparklePulse 1.2s infinite ease-in-out alternate;
+        }
+        .sparkle-1 { top: -10px; right: -10px; animation-delay: 0s; }
+        .sparkle-2 { bottom: -5px; left: -10px; animation-delay: 0.5s; }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #FFFFFF;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            animation: softFade 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.85);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes pulseFloating {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-12px) scale(1.12); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        @keyframes sparklePulse {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.3); }
+        }
+
+        @keyframes softFade {
+            0% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* 2. MAIN SCREEN */
+        .question-text {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            color: #FFFFFF;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .opt-btn {
+            width: 100%;
+            min-height: 58px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .opt-btn:hover, .opt-btn:focus {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15));
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 8px 20px rgba(0,0,0,0.2);
+            border-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .opt-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Button Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes rippleAnim {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Shake Animation for Card */
+        .shake {
+            animation: shakeCard 0.5s ease-in-out;
+        }
+
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            15%, 45%, 75% { transform: translateX(-12px) rotate(-2deg); }
+            30%, 60%, 90% { transform: translateX(12px) rotate(2deg); }
+        }
+
+        /* 3. WRONG ANSWER SCREEN ELEMENTS */
+        .wrong-message {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.6;
+            color: #FFFFFF;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            margin-bottom: 25px;
+        }
+
+        @keyframes slideUpFade {
+            0% {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .continue-btn {
+            width: 100%;
+            min-height: 58px;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(135deg, #FFD700 0%, #FF6B6B 100%);
+            color: #5C0011;
+            font-size: 19px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5), 0 0 15px rgba(255, 215, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            animation: slideUpFade 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .continue-btn.visible {
+            opacity: 1;
+        }
+
+        .continue-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 12px 30px rgba(255, 107, 107, 0.7), 0 0 25px rgba(255, 215, 0, 0.6);
+        }
+
+        .continue-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Burst Particle Canvas / Elements */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            font-size: 18px;
+            animation: particleFade 1s ease-out forwards;
+            z-index: 99;
+        }
+
+        @keyframes particleFade {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* 4. FINAL SURPRISE SCREEN */
+        .big-heart {
+            font-size: 90px;
+            display: inline-block;
+            animation: heartBeat 1.2s infinite ease-in-out;
+            filter: drop-shadow(0 0 25px rgba(255, 20, 147, 0.9));
+            margin-bottom: 20px;
+        }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.25); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.25); }
+            70% { transform: scale(1); }
+        }
+
+        .final-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #FFFFFF;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 3px 12px rgba(0,0,0,0.5);
+            animation: slideUpFade 0.8s ease-out forwards;
+        }
+
+        .final-footer {
+            margin-top: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+        }
+
+        /* Confetti Canvas */
+        #confettiCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header Section -->
-        <header style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="font-size: 20px; font-weight: 700;">Caizar Store <span style="color: #4ADE80;">✓</span></h1>
+
+    <!-- Floating Background Hearts -->
+    <div class="bg-container" id="bgContainer"></div>
+
+    <!-- Confetti / Heart Rain Canvas -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- App Viewport -->
+    <div class="app-viewport">
+
+        <!-- 1. LOADING SCREEN -->
+        <div class="screen active" id="loadingScreen">
+            <div class="glass-card">
+                <div class="loading-heart">
+                    💖
+                    <span class="sparkle-icon sparkle-1">✨</span>
+                    <span class="sparkle-icon sparkle-2">✨</span>
+                </div>
+                <div class="loading-text">Loading...</div>
             </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <div style="background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">
-                    <span id="userWallet">0</span> <span style="color: #3B82F6;">ကျပ်</span>
-                </div>
-                <a href="#message" class="nav-icon" style="color: white; text-decoration: none;">🔔</a>
-                <div class="nav-icon">☰</div>
-            </div>
-        </header>
-
-        <!-- Pages Container -->
-        <div id="pages">
-            <!-- Home Page -->
-            <section id="homePage" class="fade-in">
-                <input type="text" class="search-bar" placeholder="Search Product...">
-
-                <div class="poster-container">
-                    <img src="https://picsum.photos/seed/caizar/500/200" alt="Promo Poster" class="poster-image poster-animated">
-                </div>
-
-                <div class="warning-banner">
-                    <span>⚠️</span>
-                    <marquee id="warningText" behavior="scroll" direction="left">Loading notification...</marquee>
-                </div>
-
-                <div class="service-grid">
-                    <!-- Swapped: Boost Service First, then Top Up -->
-                    <a href="#telegram-boost" style="text-decoration: none;">
-                        <div class="luxury-box">
-                            <div class="icon-wrapper">🚀</div>
-                            <div style="font-weight: 700; font-size: 14px; color: #333;">Boost Service</div>
-                        </div>
-                    </a>
-                    <a href="#topup" style="text-decoration: none;">
-                        <div class="luxury-box">
-                            <div class="icon-wrapper">💎</div>
-                            <div style="font-weight: 700; font-size: 14px; color: #333;">Top Up</div>
-                        </div>
-                    </a>
-                    <div class="luxury-box" style="opacity: 0.7;">
-                        <div class="icon-wrapper">👑</div>
-                        <div style="font-weight: 700; font-size: 14px; color: #666;">Updating</div>
-                    </div>
-                    <div class="luxury-box" style="opacity: 0.7;">
-                        <div class="icon-wrapper">⚡</div>
-                        <div style="font-weight: 700; font-size: 14px; color: #666;">Updating</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Telegram Boost Page -->
-            <section id="telegramBoostPage" class="fade-in hidden">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <a href="#home" style="color: #05122B; text-decoration: none; font-size: 20px;">←</a>
-                    <h2 style="font-size: 18px;">Telegram Boost</h2>
-                </div>
-                <div id="telegramBoostGrid" class="service-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <!-- Injected by app.js -->
-                </div>
-            </section>
-
-            <!-- Topup Page -->
-            <section id="topupPage" class="fade-in hidden">
-                <div style="padding: 10px 0;">
-                    <h2 style="font-size: 18px; margin-bottom: 20px;">Top Up</h2>
-
-                    <div class="glass-card" style="padding: 20px; margin-bottom: 20px;">
-                        <div style="font-size: 12px; color: #64748B; margin-bottom: 10px;">Select Amount</div>
-                        <div id="topupStepperContainer" style="margin-bottom: 5px;"></div>
-
-                        <div style="font-size: 10px; color: #E11D48; margin-bottom: 20px; padding-left: 5px;">
-                            ⚠️ Check amount before confirm.
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                            <button class="quick-amount" data-amount="3000" style="padding: 8px; border: 1px solid #E2E8F0; background: white; border-radius: 8px; font-size: 10px; font-family: 'JetBrains Mono';">3,000</button>
-                            <button class="quick-amount" data-amount="5000" style="padding: 8px; border: 1px solid #E2E8F0; background: white; border-radius: 8px; font-size: 10px; font-family: 'JetBrains Mono';">5,000</button>
-                            <button class="quick-amount" data-amount="10000" style="padding: 8px; border: 1px solid #E2E8F0; background: white; border-radius: 8px; font-size: 10px; font-family: 'JetBrains Mono';">10,000</button>
-                        </div>
-                    </div>
-
-                    <div style="font-size: 12px; color: #64748B; margin-bottom: 10px;">Select Payment Method</div>
-                    <div id="paymentMethods" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 100px;">
-                        <!-- Injected by app.js -->
-                    </div>
-
-                    <div style="position: fixed; bottom: 80px; left: 0; width: 100%; padding: 0 20px; box-sizing: border-box; z-index: 10;">
-                        <button id="confirmTopup" style="width: 100%; background: #05122B; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">Confirm</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Message Page -->
-            <section id="messagePage" class="fade-in hidden">
-                <div style="padding: 20px; text-align: center;">
-                    <h2 style="font-size: 18px; margin-bottom: 20px;">Notifications</h2>
-                    <div style="color: #64748B; margin-top: 50px;">No new messages</div>
-                </div>
-            </section>
-
-            <!-- Account Page -->
-            <section id="accountPage" class="fade-in hidden">
-                <div style="padding: 10px 0;">
-                    <h2 style="font-size: 18px; margin-bottom: 20px;">Account</h2>
-
-                    <div class="luxury-box" style="padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                        <div style="width: 60px; height: 60px; background: #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">👤</div>
-                        <div>
-                            <div style="font-weight: 700; font-size: 16px;">User Name</div>
-                            <div style="font-size: 12px; color: #64748B;">ID: 10293847</div>
-                        </div>
-                    </div>
-
-                    <div class="luxury-box" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-                        <div style="padding: 15px; border-bottom: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 14px;">Wallet Balance</span>
-                            <span style="font-weight: 700; color: #3B82F6;">0 Ks</span>
-                        </div>
-                        <div id="deviceInfo" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span style="font-size: 14px;">Current Device</span>
-                            <span id="devicePlatform" style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 8px; border-radius: 4px;">Detecting...</span>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <a href="#order-history" style="text-decoration: none;">
-                            <div class="luxury-box" style="padding: 15px; text-align: center;">
-                                <div style="font-size: 20px; margin-bottom: 5px;">📜</div>
-                                <div style="font-size: 12px; font-weight: 700; color: #333;">Order History</div>
-                            </div>
-                        </a>
-                        <a href="#topup-history" style="text-decoration: none;">
-                            <div class="luxury-box" style="padding: 15px; text-align: center;">
-                                <div style="font-size: 20px; margin-bottom: 5px;">💰</div>
-                                <div style="font-size: 12px; font-weight: 700; color: #333;">Topup History</div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Order History Page -->
-            <section id="orderHistoryPage" class="fade-in hidden">
-                <div style="padding: 10px 0;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                        <a href="#account" style="color: #05122B; text-decoration: none; font-size: 20px;">←</a>
-                        <h2 style="font-size: 18px;">Order History</h2>
-                    </div>
-                    <div id="orderHistoryList">
-                        <div style="text-align: center; color: #64748B; margin-top: 50px;">No orders yet</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Order Confirmation Modal -->
-            <div id="orderModal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,18,43,0.8); z-index: 100; display: flex; align-items: flex-end; justify-content: center;">
-                <div class="modal-content fade-in-up" style="background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 30px 20px; color: #05122B;">
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <div style="font-size: 40px; margin-bottom: 10px;">📦</div>
-                        <h3 style="font-size: 22px; margin-bottom: 5px;">Order Information ✓</h3>
-                        <p style="font-size: 12px; color: #64748B;">Confirm your purchase details</p>
-                    </div>
-
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 15px; padding: 20px; margin-bottom: 25px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                            <span style="font-size: 13px; color: #64748B;">Service</span>
-                            <span id="modalServiceName" style="font-size: 13px; font-weight: 700;">-</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                            <span style="font-size: 13px; color: #64748B;">Price</span>
-                            <span id="modalPrice" style="font-size: 13px; font-weight: 700; color: #3B82F6;">0 Ks</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                            <span style="font-size: 13px; color: #64748B;">Account ID</span>
-                            <span style="font-size: 13px; font-weight: 700;">10293847</span>
-                        </div>
-                        <div style="border-top: 1px dashed #CBD5E1; margin: 10px 0; padding-top: 10px; display: flex; justify-content: space-between;">
-                            <span style="font-size: 13px; font-weight: 700;">Total Payable</span>
-                            <span id="modalTotal" style="font-size: 15px; font-weight: 700; color: #E11D48;">0 Ks</span>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 15px;">
-                        <button id="cancelOrder" style="flex: 1; padding: 15px; border-radius: 12px; border: 1px solid #E2E8F0; background: white; color: #64748B; font-weight: 700; font-family: 'JetBrains Mono';">Cancel</button>
-                        <button id="confirmOrder" style="flex: 2; padding: 15px; border-radius: 12px; border: none; background: #05122B; color: white; font-weight: 700; font-family: 'JetBrains Mono';">Confirm</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Topup History Page -->
-            <section id="topupHistoryPage" class="fade-in hidden">
-                <div style="padding: 10px 0;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                        <a href="#account" style="color: #05122B; text-decoration: none; font-size: 20px;">←</a>
-                        <h2 style="font-size: 18px;">Topup History</h2>
-                    </div>
-                    <div style="text-align: center; color: #64748B; margin-top: 50px;">No topup history</div>
-                </div>
-            </section>
         </div>
 
-        <!-- Navigation Bar -->
-        <nav class="nav-bar">
-            <a href="#home" class="nav-item active">
-                <span class="nav-icon">🏠</span>
-                <span>Home</span>
-            </a>
-            <a href="#order-history" class="nav-item">
-                <span class="nav-icon">➡️</span>
-                <span>Order</span>
-            </a>
-            <a href="#topup" class="nav-item">
-                <span class="nav-icon">➡️</span>
-                <span>Top up</span>
-            </a>
-            <a href="#message" class="nav-item">
-                <span class="nav-icon">💬</span>
-                <span>Message</span>
-            </a>
-            <a href="#account" class="nav-item">
-                <span class="nav-icon">👤</span>
-                <span>Account</span>
-            </a>
-        </nav>
+        <!-- 2. MAIN QUESTION SCREEN -->
+        <div class="screen" id="mainScreen">
+            <div class="glass-card" id="mainCard">
+                <div class="question-text">
+                    ကမ္ဘာပေါ်မှာ ချစ်စရာကောင်းဆုံးကဘယ်သူလဲ
+                </div>
+                <div class="buttons-container">
+                    <button class="opt-btn" onclick="handleWrongAnswer(event, 'Ariana Grande')">
+                        Ariana Grande
+                    </button>
+                    <button class="opt-btn" onclick="handleWrongAnswer(event, 'Zendaya')">
+                        Zendaya
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. WRONG ANSWER SCREEN -->
+        <div class="screen" id="wrongScreen">
+            <div class="glass-card" id="wrongCard">
+                <div style="font-size: 50px; margin-bottom: 15px;">🙈❤️</div>
+                <div class="wrong-message">
+                    အဖြေက မှားပါတယ် သဲသဲကသာ ချစ်စရာကောင်းဆုံး 😝❤️
+                </div>
+                <button class="continue-btn" id="continueBtn" onclick="goToFinalScreen(event)">
+                    ဆက်သွားရန် ➡️
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. FINAL SURPRISE SCREEN -->
+        <div class="screen" id="finalScreen">
+            <div class="glass-card">
+                <div class="big-heart">💖</div>
+                <div class="final-title">
+                    သဲသဲက အချစ်ဆုံးပါ ❤️
+                </div>
+                <div class="final-footer" id="finalFooter">
+                    Made with ❤️ for <span id="userNameTarget">သဲသဲ</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script>
+        // Initialize Telegram WebApp API
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        // Get User Name from Telegram or fallback
+        function getUserDisplayName() {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                const name = user.first_name || user.username || "သဲသဲ";
+                return `${name} (သဲသဲ)`;
+            }
+            return "သဲသဲ";
+        }
+
+        // Send Interaction Event back to Bot if open inside WebApp
+        function sendBotEvent(eventType, detail = "") {
+            if (tg && typeof tg.sendData === 'function') {
+                try {
+                    const payload = JSON.stringify({
+                        event: eventType,
+                        detail: detail,
+                        user: tg.initDataUnsafe?.user || null,
+                        timestamp: new Date().toISOString()
+                    });
+                    tg.sendData(payload);
+                } catch (e) {
+                    console.log("tg.sendData error:", e);
+                }
+            }
+        }
+
+        // Background Hearts Generator
+        function createBackgroundHearts() {
+            const container = document.getElementById('bgContainer');
+            const hearts = ['❤️', '💖', '💗', '💓', '💕', '✨', '🌸'];
+            const count = 18;
+
+            for (let i = 0; i < count; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
+                heart.style.left = `${Math.random() * 100}%`;
+                heart.style.animationDuration = `${6 + Math.random() * 8}s`;
+                heart.style.animationDelay = `${Math.random() * 5}s`;
+                heart.style.fontSize = `${16 + Math.random() * 18}px`;
+                container.appendChild(heart);
+            }
+        }
+
+        // Trigger Haptic Feedback
+        function triggerHaptic(type = 'light') {
+            if (tg && tg.HapticFeedback) {
+                if (type === 'error') {
+                    tg.HapticFeedback.notificationOccurred('error');
+                } else if (type === 'success') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                } else {
+                    tg.HapticFeedback.impactOccurred('medium');
+                }
+            }
+        }
+
+        // Ripple Effect on Click
+        function createRipple(event) {
+            const btn = event.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+            const radius = diameter / 2;
+
+            const rect = btn.getBoundingClientRect();
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - rect.left - radius}px`;
+            circle.style.top = `${event.clientY - rect.top - radius}px`;
+            circle.classList.add('ripple');
+
+            const ripple = btn.getElementsByClassName('ripple')[0];
+            if (ripple) {
+                ripple.remove();
+            }
+            btn.appendChild(circle);
+        }
+
+        // Burst Particle Effect
+        function createHeartBurst(x, y) {
+            const particles = ['💖', '❤️', '✨', '💕', '🌸', '✨'];
+            const numParticles = 20;
+
+            for (let i = 0; i < numParticles; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.innerText = particles[Math.floor(Math.random() * particles.length)];
+                document.body.appendChild(p);
+
+                p.style.left = `${x}px`;
+                p.style.top = `${y}px`;
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 120;
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+
+                p.style.setProperty('--dx', `${dx}px`);
+                p.style.setProperty('--dy', `${dy}px`);
+
+                setTimeout(() => p.remove(), 1000);
+            }
+        }
+
+        // Switch active screens smoothly
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        // Handle Choice Clicks (Wrong Answer Screen flow)
+        function handleWrongAnswer(event, choice) {
+            createRipple(event);
+            triggerHaptic('error');
+            sendBotEvent('clicked_option', choice);
+
+            const card = document.getElementById('mainCard');
+            card.classList.add('shake');
+
+            const rect = event.currentTarget.getBoundingClientRect();
+            const clickX = rect.left + rect.width / 2;
+            const clickY = rect.top + rect.height / 2;
+            createHeartBurst(clickX, clickY);
+
+            setTimeout(() => {
+                card.classList.remove('shake');
+                showScreen('wrongScreen');
+                sendBotEvent('viewed_wrong_answer');
+
+                // Delay 1s for Continue button entrance
+                const continueBtn = document.getElementById('continueBtn');
+                continueBtn.classList.remove('visible');
+                setTimeout(() => {
+                    continueBtn.classList.add('visible');
+                }, 1000);
+            }, 400);
+        }
+
+        // Go to Final Surprise Screen
+        function goToFinalScreen(event) {
+            if (event) createRipple(event);
+            triggerHaptic('success');
+            sendBotEvent('clicked_continue');
+
+            showScreen('finalScreen');
+            document.getElementById('userNameTarget').innerText = getUserDisplayName();
+
+            startConfetti();
+            sendBotEvent('completed_app');
+        }
+
+        // Confetti & Heart Rain Animation Logic
+        function startConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            const confettiItems = [];
+            const colors = ['#FFD700', '#FF6B6B', '#FFB6C1', '#FFFFFF', '#FF1493', '#FF69B4'];
+            const shapes = ['heart', 'circle', 'sparkle'];
+
+            for (let i = 0; i < 70; i++) {
+                confettiItems.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: 8 + Math.random() * 12,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    shape: shapes[Math.floor(Math.random() * shapes.length)],
+                    speedY: 2 + Math.random() * 3.5,
+                    speedX: (Math.random() - 0.5) * 1.8,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 4
+                });
+            }
+
+            function drawHeart(x, y, size, color, angle) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle * Math.PI / 180);
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                const d = size;
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-d / 2, -d / 2, -d, d / 3, 0, d);
+                ctx.bezierCurveTo(d, d / 3, d / 2, -d / 2, 0, 0);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                confettiItems.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotationSpeed;
+
+                    if (p.y > canvas.height) {
+                        p.y = -20;
+                        p.x = Math.random() * canvas.width;
+                    }
+
+                    if (p.shape === 'heart') {
+                        drawHeart(p.x, p.y, p.size, p.color, p.rotation);
+                    } else if (p.shape === 'sparkle') {
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.rotation * Math.PI / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.font = `${p.size * 1.2}px serif`;
+                        ctx.fillText('✨', 0, 0);
+                        ctx.restore();
+                    } else {
+                        ctx.save();
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        // Initialize App Flow
+        document.addEventListener('DOMContentLoaded', () => {
+            createBackgroundHearts();
+            sendBotEvent('app_opened');
+
+            // Auto-transition after 2.5 seconds from Loading Screen
+            setTimeout(() => {
+                showScreen('mainScreen');
+                sendBotEvent('loaded_main_screen');
+            }, 2500);
+        });
+    </script>
 </body>
 </html>
