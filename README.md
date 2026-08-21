@@ -1,51 +1,49 @@
-# Caizar Store - Luxury Telegram Mini App
+# Romantic Telegram Mini App 💖
 
-This is a premium "Luxury & Classic" Telegram Mini App for Boost Services. It is optimized for mobile performance and features a deep blue theme with JetBrains Mono typography.
+A beautiful, romantic interactive Telegram Mini Web App asking "Who is the cutest girl in the world?" with glassmorphism UI, particle effects, Burmese text, and live activity tracking via Telegram Bot.
+
+---
+
+## ✨ Features
+- **Cute Loading Screen:** Floating pulse heart emoji 💖 with sparkle animations ✨ and soft fade loading text.
+- **Interactive Glassmorphism Cards:** Glass blur, soft text-shadow glow, and touch-friendly rounded buttons.
+- **Playful Wrong Answer Screen:** Card shake animation, heart particle burst effect, and Burmese message (*"အဖြေက မှားပါတယ် သဲသဲကသာ ချစ်စရာကောင်းဆုံး 😝❤️"*).
+- **Final Surprise Screen:** Animated pulsing heart, heart rain/confetti animation, and dynamic user name greeting (*"Made with ❤️ for [Name]"*).
+- **Telegram Bot Integration:** Sends interactive event data (`tg.sendData()`) back to `bot.py` so you can track when she opens, interacts, and completes the mini app!
+
+---
 
 ## 📁 File Structure
-- `index.html`: The main entry point.
-- `css/`: Stylesheets for layout, components, and animations.
-- `js/`: Application logic, routing, and security.
-- `assets/`: Icons, posters, and font files.
-- `main.py`: Local HTTP server for testing in Pydroid 3.
-- `bot.py`: Telegram Bot script to launch the Mini App.
+- `index.html`: The complete single-file interactive web app (HTML, CSS, JS).
+- `bot.py`: Telegram Bot script for launching the app & receiving read/activity events.
+- `main.py`: Local HTTP server for quick testing in Pydroid 3 or desktop.
 
 ---
 
-## 🚀 Step 1: Local Testing (Pydroid 3)
-To see your app running on your phone before publishing:
-1. Ensure all folders (`css`, `js`, `assets`) are in the same directory as `main.py`.
-2. Run `main.py` in Pydroid 3.
-3. Open your mobile browser to: `http://localhost:8080`
+## 🚀 How to Test Locally
+1. Run `main.py` using Python or in Pydroid 3:
+   ```bash
+   python main.py
+   ```
+2. Open your web browser at `http://localhost:8080`.
 
 ---
 
-## 🌐 Step 2: Getting your Web Link (Hosting)
-Telegram requires an **HTTPS** link. You can host this project for free:
-
-### Option A: GitHub Pages (Recommended)
-1. Create a [GitHub](https://github.com) account.
-2. Create a new **Public Repository** named `caizar-store`.
-3. Upload all files and folders (`index.html`, `css/`, `js/`, `assets/`).
-4. Go to **Settings > Pages**.
-5. Under "Build and deployment", set Source to **Deploy from a branch** and select `main`.
-6. After a minute, GitHub will give you a link like: `https://yourusername.github.io/caizar-store/`
+## 🌐 How to Host & Publish on GitHub Pages
+1. Push this repository to your GitHub account (`https://github.com/Kimshika9/kim-service`).
+2. Go to **Settings > Pages** in your GitHub repository.
+3. Under **Build and deployment > Source**, choose **Deploy from a branch**.
+4. Select `main` branch and `/ (root)` folder, then click **Save**.
+5. GitHub will generate your live HTTPS URL (e.g., `https://Kimshika9.github.io/kim-service/`).
 
 ---
 
-## 🤖 Step 3: Connect to Telegram
+## 🤖 Connect to Telegram Bot
 1. Open Telegram and search for **@BotFather**.
-2. Create a new bot: `/newbot` → Name it "Caizar Store Bot" → Get your **API Token**.
-3. Create the Mini App: `/newapp` → Select your bot.
-4. **Title:** Caizar Store
-5. **Description:** Premium Boost Service Shop.
-6. **URL:** Paste your GitHub Pages link (from Step 2).
-7. **Short Name:** `caizar` (this creates `t.me/yourbot/caizar`).
-
----
-
-## 🐍 Step 4: Configure the Bot Launcher
-1. Open `bot.py` in Pydroid 3.
-2. Replace `YOUR_BOT_TOKEN` with the token from BotFather.
-3. Replace `YOUR_MINI_APP_URL` with your GitHub link.
-4. Run `bot.py`. Now, when users type `/start`, they will see a "Open Caizar Store" button.
+2. Create or edit your Mini App: `/newapp`.
+3. Select your bot, title it, and enter your **GitHub Pages URL** from above.
+4. Set `bot.py` environment variables `BOT_TOKEN` and `MINI_APP_URL`, then run `bot.py`:
+   ```bash
+   python bot.py
+   ```
+5. Anyone typing `/start` to your bot can now open and enjoy the Romantic Mini App!
