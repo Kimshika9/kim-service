@@ -1,51 +1,70 @@
-import CONFIG from './config.js';
+/**
+ * PayWell SPA Router & View Management
+ */
 
-class Router {
-    constructor() {
-        this.routes = {
-            'home': document.getElementById('homePage'),
-            'boost': document.getElementById('boostPage'),
-            'topup': document.getElementById('topupPage'),
-            'message': document.getElementById('messagePage'),
-            'account': document.getElementById('accountPage'),
-            'order-history': document.getElementById('orderHistoryPage'),
-            'topup-history': document.getElementById('topupHistoryPage'),
-            'telegram-boost': document.getElementById('telegramBoostPage')
-        };
-        this.currentRoute = 'home';
-        this.init();
+const PayWellRouter = {
+  currentView: 'home',
+
+  init() {
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.view) {
+        this.navigate(e.state.view, false);
+      }
+    });
+  },
+
+  navigate(viewName, pushState = true) {
+    // Check if crown view requested by non-owner
+    if (viewName === 'crown' && (!window.PayWellAuth || !window.PayWellAuth.isOwner())) {
+      viewName = 'home';
     }
 
-    init() {
-        window.addEventListener('hashchange', () => this.handleRoute());
-        this.handleRoute();
+    this.currentView = viewName;
+
+    // Hide all view panels
+    document.querySelectorAll('.app-view').forEach(el => el.style.display = 'none');
+
+    // Show target view panel
+    const targetEl = document.getElementById(`view-${viewName}`);
+    if (targetEl) {
+      targetEl.style.display = 'block';
+      targetEl.classList.remove('animate-float');
+      void targetEl.offsetWidth; // trigger reflow
+      targetEl.classList.add('animate-float');
     }
 
-    handleRoute() {
-        const hash = window.location.hash.slice(1) || 'home';
-        this.navigate(hash);
-    }
-
-    navigate(route) {
-        Object.values(this.routes).forEach(el => {
-            if (el) el.classList.add('hidden');
-        });
-
-        if (this.routes[route]) {
-            this.routes[route].classList.remove('hidden');
-            this.currentRoute = route;
+    // Update Navigation bar active items
+    document.querySelectorAll('.nav-item').forEach(nav => {
+      nav.classList.remove('active', 'crown-active');
+      if (nav.dataset.view === viewName) {
+        if (viewName === 'crown') {
+          nav.classList.add('crown-active');
+        } else {
+          nav.classList.add('active');
         }
+      }
+    });
 
-        // Update Nav UI
-        document.querySelectorAll('.nav-item').forEach(nav => {
-            nav.classList.remove('active');
-            if (nav.getAttribute('href') === `#${route}`) {
-                nav.classList.add('active');
-            }
-        });
-
-        window.scrollTo(0, 0);
+    if (pushState) {
+      history.pushState({ view: viewName }, '', `#${viewName}`);
     }
-}
 
-export default new Router();
+    window.dispatchEvent(new CustomEvent('paywell_view_changed', { detail: viewName }));
+  },
+
+  openModal(modalId) {
+    const overlay = document.getElementById(modalId);
+    if (overlay) {
+      overlay.classList.add('active');
+    }
+  },
+
+  closeModal(modalId) {
+    const overlay = document.getElementById(modalId);
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+  }
+};
+
+window.PayWellRouter = PayWellRouter;

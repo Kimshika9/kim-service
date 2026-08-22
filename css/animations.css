@@ -1,34 +1,67 @@
-/* Poster Animation 2: Luxury Ambient Fading/Zoom */
-@keyframes kenBurns {
-    0% {
-        transform: scale(1) translate(0, 0);
-    }
-    50% {
-        transform: scale(1.1) translate(-1%, -1%);
-    }
-    100% {
-        transform: scale(1) translate(0, 0);
-    }
+/* PayWell Animations & Interactive Keyframes */
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px var(--primary-green-glow); }
+  50% { box-shadow: 0 0 25px var(--primary-green-glow); }
+  100% { box-shadow: 0 0 10px var(--primary-green-glow); }
 }
 
-.poster-animated {
-    animation: kenBurns 10s ease-in-out infinite;
+@keyframes goldSparkle {
+  0% { box-shadow: 0 0 10px var(--gold-glow); }
+  50% { box-shadow: 0 0 30px var(--gold-glow); }
+  100% { box-shadow: 0 0 10px var(--gold-glow); }
 }
 
-.fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.fade-in-up {
-    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes checkmarkPop {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  70% { transform: scale(1.2) rotate(0deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(100%); }
-    to { opacity: 1; transform: translateY(0); }
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+.animate-gold-sparkle {
+  animation: goldSparkle 2s infinite ease-in-out;
+}
+
+.animate-shake {
+  animation: shakeError 0.4s ease-in-out;
+}
+
+.animate-float {
+  animation: floatUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-check {
+  animation: checkmarkPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Confetti Gold Burst Container */
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 300;
 }

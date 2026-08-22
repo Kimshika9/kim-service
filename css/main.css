@@ -1,97 +1,182 @@
+/* PayWell Design System - Modern Glassmorphism & Cyberpunk Elegance */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 :root {
-    --bg-main: #05122B;
-    --text-light: #FFFFFF;
-    --text-dark: #05122B;
-    --card-bg: #FFFFFF;
-    --accent-blue: #3B82F6;
-    --luxury-gold: #D4AF37;
-    --mono-font: 'JetBrains Mono', monospace;
+  /* Color Palette - Dark Mode Default */
+  --bg-primary: #0A0A0F;
+  --bg-secondary: #12121A;
+  --bg-tertiary: #1A1A24;
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --bg-glass-card: rgba(18, 18, 26, 0.75);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+
+  /* Primary Neon Green */
+  --primary-green: #00E676;
+  --primary-green-glow: rgba(0, 230, 118, 0.35);
+  --primary-green-dark: #00C853;
+
+  /* Accent Colors */
+  --secondary-blue: #00B4D8;
+  --secondary-blue-glow: rgba(0, 180, 216, 0.3);
+  --gold-accent: #FFD700;
+  --gold-glow: rgba(255, 215, 0, 0.4);
+  --red-alert: #FF5252;
+  --red-glow: rgba(255, 82, 82, 0.35);
+  --purple-store: #B388FF;
+  --purple-glow: rgba(179, 136, 255, 0.35);
+
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+
+  /* Borders & Dividers */
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --border-green: rgba(0, 230, 118, 0.4);
+  --border-gold: rgba(255, 215, 0, 0.4);
+
+  /* Fonts */
+  --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* UI Dimensions */
+  --border-radius-sm: 8px;
+  --border-radius-md: 14px;
+  --border-radius-lg: 22px;
+  --border-radius-xl: 30px;
+  --nav-height: 70px;
 }
 
+/* Light Mode Overrides */
+[data-theme="light"] {
+  --bg-primary: #F5F5F7;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EAEAEF;
+  --bg-glass: rgba(0, 0, 0, 0.03);
+  --bg-glass-card: rgba(255, 255, 255, 0.85);
+  --bg-glass-hover: rgba(0, 0, 0, 0.05);
+
+  --primary-green: #00C853;
+  --primary-green-glow: rgba(0, 200, 83, 0.2);
+  --secondary-blue: #0096C7;
+  --gold-accent: #FF8F00;
+  --gold-glow: rgba(255, 143, 0, 0.25);
+
+  --text-primary: #1A1A24;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --border-green: rgba(0, 200, 83, 0.3);
+  --border-gold: rgba(255, 143, 0, 0.3);
+}
+
+/* Global Reset */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: var(--mono-font);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 body {
-    background-color: #F8FAFC;
-    color: var(--text-dark);
-    min-height: 100vh;
-    -webkit-tap-highlight-color: transparent;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.app-container {
-    max-width: 500px;
-    margin: 0 auto;
-    background-color: #F8FAFC;
-    min-height: 100vh;
-    padding: 0;
-    padding-bottom: 100px;
-    position: relative;
+#app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  padding-bottom: calc(var(--nav-height) + 20px);
 }
 
-header {
-    background: var(--bg-main);
-    color: white;
-    padding: 25px 20px;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
-    box-shadow: 0 10px 30px rgba(5, 18, 43, 0.2);
+/* Typography */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-#pages {
-    padding: 20px;
+.font-mono, .tx-id, .amount-display, .pin-dot {
+  font-family: var(--font-mono);
 }
 
+/* Glassmorphism Card Utility */
 .glass-card {
-    background: var(--card-bg);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-dark);
+  background: var(--bg-glass-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.luxury-box {
-    background: var(--card-bg);
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: var(--text-dark);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+.glass-card:active {
+  transform: scale(0.985);
 }
 
-.luxury-box:active {
-    transform: scale(0.96);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.2);
+.glass-card-gold {
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 0 20px var(--gold-glow);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(18, 18, 26, 0.85) 100%);
 }
 
-.hidden {
-    display: none !important;
+.glass-card-green {
+  border: 1px solid var(--border-green);
+  box-shadow: 0 0 20px var(--primary-green-glow);
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.08) 0%, rgba(18, 18, 26, 0.85) 100%);
 }
 
-h1, h2, h3 {
-    color: var(--text-dark);
+/* PayWell Triangle-Box Hexagon Logo */
+.pw-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-header h1 {
-    color: white !important;
+.pw-hexagon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-blue) 100%);
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 18px;
+  color: #0A0A0F;
+  box-shadow: 0 0 15px var(--primary-green-glow);
 }
 
-.text-dark {
-    color: var(--text-dark) !important;
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-.fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
 }
