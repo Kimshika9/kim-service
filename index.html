@@ -1,719 +1,367 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Who is the cutest girl?</title>
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Google Fonts: Quicksand & Padauk for Burmese support -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PayWell - Premium Digital Wallet & Payment System</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Quicksand', 'Padauk', -apple-system, sans-serif;
-            background: linear-gradient(135deg, #FFB6C1 0%, #E63946 50%, #8B0000 100%);
-            color: #FFFFFF;
-            position: relative;
-        }
+  <!-- QRCode Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-        /* Canvas / Background Floating Elements */
-        .bg-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            overflow: hidden;
-        }
-
-        .floating-heart {
-            position: absolute;
-            bottom: -50px;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 20px;
-            animation: floatUp linear infinite;
-            filter: drop-shadow(0 0 6px rgba(255, 182, 193, 0.6));
-        }
-
-        @keyframes floatUp {
-            0% {
-                transform: translateY(0) rotate(0deg) scale(0.8);
-                opacity: 0;
-            }
-            15% {
-                opacity: 0.8;
-            }
-            85% {
-                opacity: 0.8;
-            }
-            100% {
-                transform: translateY(-110vh) rotate(360deg) scale(1.2);
-                opacity: 0;
-            }
-        }
-
-        /* Main Container & Screens */
-        .app-viewport {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            padding: 20px;
-        }
-
-        .screen {
-            position: absolute;
-            width: 100%;
-            max-width: 380px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.5s ease-out;
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.92);
-        }
-
-        .screen.active {
-            opacity: 1;
-            pointer-events: auto;
-            transform: scale(1);
-        }
-
-        /* Glass Card Base Style */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            padding: 35px 25px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25),
-                        inset 0 0 15px rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        /* 1. LOADING SCREEN */
-        #loadingScreen .glass-card {
-            animation: cardEntrance 0.8s ease-out forwards;
-        }
-
-        .loading-heart {
-            font-size: 65px;
-            display: inline-block;
-            animation: pulseFloating 1.8s ease-in-out infinite;
-            filter: drop-shadow(0 0 15px rgba(255, 105, 180, 0.8));
-            position: relative;
-        }
-
-        .sparkle-icon {
-            position: absolute;
-            font-size: 20px;
-            animation: sparklePulse 1.2s infinite ease-in-out alternate;
-        }
-        .sparkle-1 { top: -10px; right: -10px; animation-delay: 0s; }
-        .sparkle-2 { bottom: -5px; left: -10px; animation-delay: 0.5s; }
-
-        .loading-text {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: #FFFFFF;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            animation: softFade 1.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes cardEntrance {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.85);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        @keyframes pulseFloating {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-12px) scale(1.12); }
-            100% { transform: translateY(0) scale(1); }
-        }
-
-        @keyframes sparklePulse {
-            0% { opacity: 0.3; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1.3); }
-        }
-
-        @keyframes softFade {
-            0% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-
-        /* 2. MAIN SCREEN */
-        .question-text {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.5;
-            margin-bottom: 30px;
-            color: #FFFFFF;
-            text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0,0,0,0.4);
-        }
-
-        .buttons-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            width: 100%;
-        }
-
-        .opt-btn {
-            width: 100%;
-            min-height: 58px;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: #FFFFFF;
-            font-size: 18px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .opt-btn:hover, .opt-btn:focus {
-            transform: scale(1.05);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15));
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 0 8px 20px rgba(0,0,0,0.2);
-            border-color: rgba(255, 255, 255, 0.7);
-        }
-
-        .opt-btn:active {
-            transform: scale(0.96);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Button Ripple Effect */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.6);
-            transform: scale(0);
-            animation: rippleAnim 0.6s linear;
-            pointer-events: none;
-        }
-
-        @keyframes rippleAnim {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-
-        /* Shake Animation for Card */
-        .shake {
-            animation: shakeCard 0.5s ease-in-out;
-        }
-
-        @keyframes shakeCard {
-            0%, 100% { transform: translateX(0); }
-            15%, 45%, 75% { transform: translateX(-12px) rotate(-2deg); }
-            30%, 60%, 90% { transform: translateX(12px) rotate(2deg); }
-        }
-
-        /* 3. WRONG ANSWER SCREEN ELEMENTS */
-        .wrong-message {
-            font-size: 20px;
-            font-weight: 700;
-            line-height: 1.6;
-            color: #FFFFFF;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
-            animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            margin-bottom: 25px;
-        }
-
-        @keyframes slideUpFade {
-            0% {
-                opacity: 0;
-                transform: translateY(25px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .continue-btn {
-            width: 100%;
-            min-height: 58px;
-            border-radius: 50px;
-            border: none;
-            background: linear-gradient(135deg, #FFD700 0%, #FF6B6B 100%);
-            color: #5C0011;
-            font-size: 19px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5), 0 0 15px rgba(255, 215, 0, 0.4);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            animation: slideUpFade 0.6s ease-out forwards;
-            opacity: 0;
-        }
-
-        .continue-btn.visible {
-            opacity: 1;
-        }
-
-        .continue-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 12px 30px rgba(255, 107, 107, 0.7), 0 0 25px rgba(255, 215, 0, 0.6);
-        }
-
-        .continue-btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Burst Particle Canvas / Elements */
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            font-size: 18px;
-            animation: particleFade 1s ease-out forwards;
-            z-index: 99;
-        }
-
-        @keyframes particleFade {
-            0% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--dx), var(--dy)) scale(0) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        /* 4. FINAL SURPRISE SCREEN */
-        .big-heart {
-            font-size: 90px;
-            display: inline-block;
-            animation: heartBeat 1.2s infinite ease-in-out;
-            filter: drop-shadow(0 0 25px rgba(255, 20, 147, 0.9));
-            margin-bottom: 20px;
-        }
-
-        @keyframes heartBeat {
-            0%, 100% { transform: scale(1); }
-            14% { transform: scale(1.25); }
-            28% { transform: scale(1); }
-            42% { transform: scale(1.25); }
-            70% { transform: scale(1); }
-        }
-
-        .final-title {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #FFFFFF;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 3px 12px rgba(0,0,0,0.5);
-            animation: slideUpFade 0.8s ease-out forwards;
-        }
-
-        .final-footer {
-            margin-top: 25px;
-            font-size: 15px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
-            letter-spacing: 0.5px;
-        }
-
-        /* Confetti Canvas */
-        #confettiCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 20;
-        }
-    </style>
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
 
-    <!-- Floating Background Hearts -->
-    <div class="bg-container" id="bgContainer"></div>
+  <div id="app">
 
-    <!-- Confetti / Heart Rain Canvas -->
-    <canvas id="confettiCanvas"></canvas>
+    <!-- Top Sticky Header Bar -->
+    <header class="top-header">
+      <div class="pw-logo-wrap">
+        <div class="pw-hexagon">PW</div>
+        <div>
+          <div class="top-header-title font-heading" data-i18n="appName">PayWell</div>
+          <div style="font-size:10px; color:var(--primary-green); letter-spacing:0.08em; text-transform:uppercase;">Community Currency</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div id="header-username" style="font-size:13px; font-weight:600; color:var(--text-secondary);">@Guest</div>
+        <button onclick="PayWellApp.toggleTheme()" class="btn btn-glass" style="padding:6px 10px; width:auto; font-size:12px;">🌓</button>
+      </div>
+    </header>
 
-    <!-- App Viewport -->
-    <div class="app-viewport">
+    <!-- MAIN APP VIEWS CONTAINER -->
+    <main style="padding:16px;">
 
-        <!-- 1. LOADING SCREEN -->
-        <div class="screen active" id="loadingScreen">
-            <div class="glass-card">
-                <div class="loading-heart">
-                    💖
-                    <span class="sparkle-icon sparkle-1">✨</span>
-                    <span class="sparkle-icon sparkle-2">✨</span>
-                </div>
-                <div class="loading-text">Loading...</div>
-            </div>
+      <!-- 1. HOME DASHBOARD VIEW -->
+      <section id="view-home" class="app-view">
+
+        <!-- Premium Balance Card -->
+        <div class="glass-card glass-card-green animate-pulse-glow" style="padding:22px; text-align:center; margin-bottom:20px; position:relative; overflow:hidden;">
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:0.1em;" data-i18n="totalBalance">TOTAL BALANCE</div>
+
+          <div style="margin:14px 0;">
+            <span id="bal-main" class="amount-display" style="font-size:42px; font-weight:800; color:var(--text-primary);">0</span>
+            <span id="bal-side" class="amount-display" style="font-size:22px; font-weight:700; color:var(--primary-green);">.00 PW</span>
+          </div>
+
+          <!-- Quick Actions Grid -->
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:20px;">
+            <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:10px;">
+              <span>📤</span> <span data-i18n="send">Send</span>
+            </button>
+            <button onclick="PayWellRouter.openModal('modal-receive')" class="btn btn-glass" style="padding:10px;">
+              <span>📥</span> <span data-i18n="receive">Receive</span>
+            </button>
+            <button onclick="PayWellRouter.openModal('modal-qr')" class="btn btn-glass" style="padding:10px;">
+              <span>📷</span> <span data-i18n="qrScan">Scan QR</span>
+            </button>
+          </div>
         </div>
 
-        <!-- 2. MAIN QUESTION SCREEN -->
-        <div class="screen" id="mainScreen">
-            <div class="glass-card" id="mainCard">
-                <div class="question-text">
-                    ကမ္ဘာပေါ်မှာ ချစ်စရာကောင်းဆုံးကဘယ်သူလဲ
-                </div>
-                <div class="buttons-container">
-                    <button class="opt-btn" onclick="handleWrongAnswer(event, 'Ariana Grande')">
-                        Ariana Grande
-                    </button>
-                    <button class="opt-btn" onclick="handleWrongAnswer(event, 'Zendaya')">
-                        Zendaya
-                    </button>
-                </div>
-            </div>
+        <!-- Recent Activity Feed -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="font-size:16px;" data-i18n="recentActivity">Recent Activity</h3>
+          <a href="#" onclick="PayWellRouter.navigate('activity')" style="font-size:12px; color:var(--primary-green); text-decoration:none;" data-i18n="viewAll">View All</a>
         </div>
 
-        <!-- 3. WRONG ANSWER SCREEN -->
-        <div class="screen" id="wrongScreen">
-            <div class="glass-card" id="wrongCard">
-                <div style="font-size: 50px; margin-bottom: 15px;">🙈❤️</div>
-                <div class="wrong-message">
-                    အဖြေက မှားပါတယ် သဲသဲကသာ ချစ်စရာကောင်းဆုံး 😝❤️
-                </div>
-                <button class="continue-btn" id="continueBtn" onclick="goToFinalScreen(event)">
-                    ဆက်သွားရန် ➡️
-                </button>
-            </div>
+        <div id="recent-tx-list">
+          <div style="text-align:center; padding:20px; color:var(--text-muted);" data-i18n="noTransactions">No transactions recorded yet.</div>
         </div>
 
-        <!-- 4. FINAL SURPRISE SCREEN -->
-        <div class="screen" id="finalScreen">
-            <div class="glass-card">
-                <div class="big-heart">💖</div>
-                <div class="final-title">
-                    သဲသဲက အချစ်ဆုံးပါ ❤️
-                </div>
-                <div class="final-footer" id="finalFooter">
-                    Made with ❤️ for <span id="userNameTarget">သဲသဲ</span>
-                </div>
-            </div>
+      </section>
+
+      <!-- 2. ACTIVITY HISTORY VIEW -->
+      <section id="view-activity" class="app-view" style="display:none;">
+        <h2 style="margin-bottom:16px;" data-i18n="recentActivity">Transaction History</h2>
+        <div id="full-tx-list"></div>
+      </section>
+
+      <!-- 3. STORE VIEW -->
+      <section id="view-store" class="app-view" style="display:none;">
+        <div style="margin-bottom:16px;">
+          <h2 data-i18n="communityStore">Community Store</h2>
+          <div style="font-size:12px; color:var(--text-muted);" data-i18n="storeSubtitle">Purchase exclusive virtual badges, frames & perks</div>
         </div>
 
+        <div id="store-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;"></div>
+      </section>
+
+      <!-- 4. PROFILE & SETTINGS VIEW -->
+      <section id="view-profile" class="app-view" style="display:none;">
+        <h2 style="margin-bottom:16px;" data-i18n="profile">User Profile</h2>
+
+        <div class="glass-card" style="padding:20px; margin-bottom:16px;">
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;" data-i18n="language">Language / နေ့စဉ်သုံးဘာသာစကား</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="PayWellApp.toggleLanguage('en')" class="btn btn-glass">🇺🇸 English</button>
+            <button onclick="PayWellApp.toggleLanguage('my')" class="btn btn-glass">🇲🇲 မြန်မာ (Burmese)</button>
+          </div>
+        </div>
+
+        <div class="glass-card" style="padding:20px; margin-bottom:16px;">
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;" data-i18n="contactSupport">Contact Owner Support</div>
+          <a href="https://t.me/Yuji_luke" target="_blank" class="btn btn-gold" style="text-decoration:none;">
+            <span>👑</span> Contact @Yuji_luke
+          </a>
+        </div>
+
+        <button onclick="PayWellAuth.logout()" class="btn btn-danger" data-i18n="logout">Log Out</button>
+      </section>
+
+      <!-- 5. OWNER CROWN VIEW (Restricted to Owner ID 6399210935 / @Yuji_luke) -->
+      <section id="view-crown" class="app-view" style="display:none;">
+
+        <!-- PIN Protection Pad -->
+        <div id="owner-pin-screen" class="glass-card glass-card-gold" style="padding:24px; text-align:center;">
+          <div style="font-size:32px; margin-bottom:8px;">👑</div>
+          <h2 style="color:var(--gold-accent);" data-i18n="ownerTitle">Owner Crown Panel</h2>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;" data-i18n="enterPin">Enter 6-Digit Owner PIN</div>
+
+          <div id="owner-pin-box">
+            <div class="pin-dots">
+              <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+              <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+            </div>
+
+            <div class="pin-grid">
+              <button class="pin-btn pin-key" data-value="1">1</button>
+              <button class="pin-btn pin-key" data-value="2">2</button>
+              <button class="pin-btn pin-key" data-value="3">3</button>
+              <button class="pin-btn pin-key" data-value="4">4</button>
+              <button class="pin-btn pin-key" data-value="5">5</button>
+              <button class="pin-btn pin-key" data-value="6">6</button>
+              <button class="pin-btn pin-key" data-value="7">7</button>
+              <button class="pin-btn pin-key" data-value="8">8</button>
+              <button class="pin-btn pin-key" data-value="9">9</button>
+              <button class="pin-btn pin-key" data-value="clear">C</button>
+              <button class="pin-btn pin-key" data-value="0">0</button>
+              <button class="pin-btn pin-key" data-value="backspace">⌫</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Owner Unlocked Control Panel -->
+        <div id="owner-dashboard-content" style="display:none;">
+          <div class="glass-card glass-card-gold" style="padding:20px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="color:var(--gold-accent);">👑 System Control Center</h3>
+              <span style="font-size:11px; background:rgba(255,215,0,0.2); color:var(--gold-accent); padding:2px 8px; border-radius:10px;">@Yuji_luke</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center;">
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+                <div style="font-size:10px; color:var(--text-muted);">Users</div>
+                <div id="owner-stat-users" class="font-mono" style="font-weight:700; color:var(--text-primary);">0</div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+                <div style="font-size:10px; color:var(--text-muted);">Circulation</div>
+                <div id="owner-stat-circ" class="font-mono" style="font-weight:700; color:var(--gold-accent); font-size:11px;">0.00 PW</div>
+              </div>
+              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+                <div style="font-size:10px; color:var(--text-muted);">Transactions</div>
+                <div id="owner-stat-txs" class="font-mono" style="font-weight:700; color:var(--primary-green);">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Management & Currency Tools -->
+          <div style="margin-bottom:12px; font-weight:700; color:var(--gold-accent);">User List & Balance Management</div>
+          <div id="owner-users-list"></div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item active" data-view="home">
+        <span class="nav-icon">🏠</span>
+        <span data-i18n="navHome">Home</span>
+      </a>
+      <a href="#" class="nav-item" data-view="activity">
+        <span class="nav-icon">📊</span>
+        <span data-i18n="navActivity">Activity</span>
+      </a>
+      <a href="#" class="nav-item" data-view="store">
+        <span class="nav-icon">🏪</span>
+        <span data-i18n="navStore">Store</span>
+      </a>
+      <a href="#" class="nav-item" data-view="profile">
+        <span class="nav-icon">👤</span>
+        <span data-i18n="navProfile">Profile</span>
+      </a>
+      <a href="#" id="nav-crown-item" class="nav-item nav-crown-glow" data-view="crown" style="display:none;">
+        <span class="nav-icon" style="color:var(--gold-accent);">👑</span>
+        <span style="color:var(--gold-accent);" data-i18n="navCrown">Crown</span>
+      </a>
+    </nav>
+
+    <!-- MODALS SECTION -->
+
+    <!-- AUTHENTICATION MODAL -->
+    <div id="modal-auth" class="modal-overlay">
+      <div class="modal-content">
+        <div style="text-align:center; margin-bottom:20px;">
+          <div class="pw-hexagon" style="margin:0 auto 12px auto; width:50px; height:50px; font-size:22px;">PW</div>
+          <h2 class="font-heading">Welcome to PayWell</h2>
+          <div style="font-size:12px; color:var(--text-muted);">Sign in or create a community account</div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="form-login">
+          <div class="form-group">
+            <label class="form-label">Username or Email</label>
+            <input type="text" id="login-ident" class="form-input" required placeholder="e.g. Yuji_luke">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-pwd" class="form-input" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:10px;">Sign In</button>
+        </form>
+
+        <div style="text-align:center; margin:16px 0; font-size:12px; color:var(--text-muted);">OR</div>
+
+        <!-- Registration Toggle -->
+        <form id="form-register">
+          <div class="form-group">
+            <label class="form-label">Choose Username</label>
+            <input type="text" id="reg-username" class="form-input" required placeholder="e.g. CommunityMember">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address (Optional)</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="user@gmail.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="reg-pwd" class="form-input" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-glass">Create New Account</button>
+        </form>
+      </div>
     </div>
 
-    <script>
-        // Initialize Telegram WebApp API
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-        }
+    <!-- SEND MONEY MODAL -->
+    <div id="modal-send" class="modal-overlay">
+      <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 data-i18n="sendMoneyTitle">Send PW Tokens</h3>
+          <button onclick="PayWellRouter.closeModal('modal-send')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
 
-        // Get User Name from Telegram or fallback
-        function getUserDisplayName() {
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const user = tg.initDataUnsafe.user;
-                const name = user.first_name || user.username || "သဲသဲ";
-                return `${name} (သဲသဲ)`;
-            }
-            return "သဲသဲ";
-        }
+        <div class="form-group">
+          <label class="form-label" data-i18n="recipientUsername">Recipient Username</label>
+          <input type="text" id="send-receiver" class="form-input" placeholder="e.g. Yuji_luke">
+        </div>
 
-        // Send Interaction Event back to Bot if open inside WebApp
-        function sendBotEvent(eventType, detail = "") {
-            if (tg && typeof tg.sendData === 'function') {
-                try {
-                    const payload = JSON.stringify({
-                        event: eventType,
-                        detail: detail,
-                        user: tg.initDataUnsafe?.user || null,
-                        timestamp: new Date().toISOString()
-                    });
-                    tg.sendData(payload);
-                } catch (e) {
-                    console.log("tg.sendData error:", e);
-                }
-            }
-        }
+        <div class="form-group">
+          <label class="form-label" data-i18n="amountPW">Amount (PW)</label>
+          <input type="number" step="0.01" id="send-amount" class="form-input" placeholder="0.00">
+        </div>
 
-        // Background Hearts Generator
-        function createBackgroundHearts() {
-            const container = document.getElementById('bgContainer');
-            const hearts = ['❤️', '💖', '💗', '💓', '💕', '✨', '🌸'];
-            const count = 18;
+        <div class="form-group">
+          <label class="form-label" data-i18n="noteOptional">Note (Optional)</label>
+          <input type="text" id="send-note" class="form-input" placeholder="What is this payment for?">
+        </div>
 
-            for (let i = 0; i < count; i++) {
-                const heart = document.createElement('div');
-                heart.className = 'floating-heart';
-                heart.innerText = hearts[Math.floor(Math.random() * hearts.length)];
-                heart.style.left = `${Math.random() * 100}%`;
-                heart.style.animationDuration = `${6 + Math.random() * 8}s`;
-                heart.style.animationDelay = `${Math.random() * 5}s`;
-                heart.style.fontSize = `${16 + Math.random() * 18}px`;
-                container.appendChild(heart);
-            }
-        }
+        <button onclick="PayWellApp.submitSendMoney()" class="btn btn-primary" style="margin-top:10px;" data-i18n="confirmSend">Confirm & Send</button>
+      </div>
+    </div>
 
-        // Trigger Haptic Feedback
-        function triggerHaptic(type = 'light') {
-            if (tg && tg.HapticFeedback) {
-                if (type === 'error') {
-                    tg.HapticFeedback.notificationOccurred('error');
-                } else if (type === 'success') {
-                    tg.HapticFeedback.notificationOccurred('success');
-                } else {
-                    tg.HapticFeedback.impactOccurred('medium');
-                }
-            }
-        }
+    <!-- RECEIVE MONEY MODAL -->
+    <div id="modal-receive" class="modal-overlay">
+      <div class="modal-content" style="text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 data-i18n="receiveMoneyTitle">Receive PW Tokens</h3>
+          <button onclick="PayWellRouter.closeModal('modal-receive')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
 
-        // Ripple Effect on Click
-        function createRipple(event) {
-            const btn = event.currentTarget;
-            const circle = document.createElement('span');
-            const diameter = Math.max(btn.clientWidth, btn.clientHeight);
-            const radius = diameter / 2;
+        <div id="receipt-qr-canvas" style="display:inline-block; padding:12px; background:#FFF; border-radius:12px; margin:16px 0;"></div>
 
-            const rect = btn.getBoundingClientRect();
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${event.clientX - rect.left - radius}px`;
-            circle.style.top = `${event.clientY - rect.top - radius}px`;
-            circle.classList.add('ripple');
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;" data-i18n="scanToPayMsg">Scan this QR code using PayWell to receive tokens instantly.</div>
+        <button onclick="navigator.clipboard.writeText(PayWellAuth.currentUser?.username || ''); alert(window.PayWellI18n.t('usernameCopied'))" class="btn btn-glass" data-i18n="copyUsername">Copy Username</button>
+      </div>
+    </div>
 
-            const ripple = btn.getElementsByClassName('ripple')[0];
-            if (ripple) {
-                ripple.remove();
-            }
-            btn.appendChild(circle);
-        }
+    <!-- TRANSACTION RECEIPT MODAL -->
+    <div id="modal-receipt" class="modal-overlay">
+      <div class="modal-content">
+        <div class="glass-card" style="padding:20px; border:1px solid var(--border-green);">
+          <div style="text-align:center; border-bottom:1px dashed var(--border-glass); padding-bottom:12px; margin-bottom:12px;">
+            <div class="pw-hexagon" style="margin:0 auto 8px auto;">PW</div>
+            <h3 class="font-heading" data-i18n="transactionReceipt">Transaction Receipt</h3>
+            <div id="receipt-id" class="font-mono" style="font-size:11px; color:var(--primary-green);">PW-2024-XXXX</div>
+          </div>
 
-        // Burst Particle Effect
-        function createHeartBurst(x, y) {
-            const particles = ['💖', '❤️', '✨', '💕', '🌸', '✨'];
-            const numParticles = 20;
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:var(--text-muted);" data-i18n="from">From:</span>
+            <span id="receipt-sender" class="font-mono" style="font-weight:600;">@Sender</span>
+          </div>
 
-            for (let i = 0; i < numParticles; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.innerText = particles[Math.floor(Math.random() * particles.length)];
-                document.body.appendChild(p);
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:var(--text-muted);" data-i18n="to">To:</span>
+            <span id="receipt-receiver" class="font-mono" style="font-weight:600;">@Receiver</span>
+          </div>
 
-                p.style.left = `${x}px`;
-                p.style.top = `${y}px`;
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
+            <span style="color:var(--text-muted);" data-i18n="amount">Amount:</span>
+            <span id="receipt-amount" class="font-mono" style="font-weight:700; color:var(--primary-green);">0.00 PW</span>
+          </div>
 
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 80 + Math.random() * 120;
-                const dx = Math.cos(angle) * distance;
-                const dy = Math.sin(angle) * distance;
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:13px;">
+            <span style="color:var(--text-muted);" data-i18n="date">Date:</span>
+            <span id="receipt-date" style="font-size:12px;">-</span>
+          </div>
 
-                p.style.setProperty('--dx', `${dx}px`);
-                p.style.setProperty('--dy', `${dy}px`);
+          <button onclick="PayWellRouter.closeModal('modal-receipt')" class="btn btn-primary" style="margin-top:12px;">Done</button>
+        </div>
+      </div>
+    </div>
 
-                setTimeout(() => p.remove(), 1000);
-            }
-        }
+    <!-- OWNER ADJUSTMENT MODAL -->
+    <div id="modal-owner-adjust" class="modal-overlay">
+      <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 style="color:var(--gold-accent);">Modify User Balance</h3>
+          <button onclick="PayWellRouter.closeModal('modal-owner-adjust')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
 
-        // Switch active screens smoothly
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const target = document.getElementById(screenId);
-            if (target) {
-                target.classList.add('active');
-            }
-        }
+        <div class="form-group">
+          <label class="form-label">Target Username</label>
+          <input type="text" id="adjust-target-user" class="form-input" readonly>
+        </div>
 
-        // Handle Choice Clicks (Wrong Answer Screen flow)
-        function handleWrongAnswer(event, choice) {
-            createRipple(event);
-            triggerHaptic('error');
-            sendBotEvent('clicked_option', choice);
+        <div class="form-group">
+          <label class="form-label">Amount (PW)</label>
+          <input type="number" step="0.01" id="adjust-amount" class="form-input" placeholder="100.00">
+        </div>
 
-            const card = document.getElementById('mainCard');
-            card.classList.add('shake');
+        <div class="form-group">
+          <label class="form-label">Reason</label>
+          <input type="text" id="adjust-reason" class="form-input" placeholder="e.g. Event Reward / Community Bonus">
+        </div>
 
-            const rect = event.currentTarget.getBoundingClientRect();
-            const clickX = rect.left + rect.width / 2;
-            const clickY = rect.top + rect.height / 2;
-            createHeartBurst(clickX, clickY);
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;">
+          <button onclick="PayWellOwner.submitAdjustCurrency('add')" class="btn btn-gold">Add Tokens</button>
+          <button onclick="PayWellOwner.submitAdjustCurrency('deduct')" class="btn btn-danger">Deduct Tokens</button>
+        </div>
+      </div>
+    </div>
 
-            setTimeout(() => {
-                card.classList.remove('shake');
-                showScreen('wrongScreen');
-                sendBotEvent('viewed_wrong_answer');
+  </div>
 
-                // Delay 1s for Continue button entrance
-                const continueBtn = document.getElementById('continueBtn');
-                continueBtn.classList.remove('visible');
-                setTimeout(() => {
-                    continueBtn.classList.add('visible');
-                }, 1000);
-            }, 400);
-        }
-
-        // Go to Final Surprise Screen
-        function goToFinalScreen(event) {
-            if (event) createRipple(event);
-            triggerHaptic('success');
-            sendBotEvent('clicked_continue');
-
-            showScreen('finalScreen');
-            document.getElementById('userNameTarget').innerText = getUserDisplayName();
-
-            startConfetti();
-            sendBotEvent('completed_app');
-        }
-
-        // Confetti & Heart Rain Animation Logic
-        function startConfetti() {
-            const canvas = document.getElementById('confettiCanvas');
-            const ctx = canvas.getContext('2d');
-
-            function resizeCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            const confettiItems = [];
-            const colors = ['#FFD700', '#FF6B6B', '#FFB6C1', '#FFFFFF', '#FF1493', '#FF69B4'];
-            const shapes = ['heart', 'circle', 'sparkle'];
-
-            for (let i = 0; i < 70; i++) {
-                confettiItems.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height - canvas.height,
-                    size: 8 + Math.random() * 12,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    shape: shapes[Math.floor(Math.random() * shapes.length)],
-                    speedY: 2 + Math.random() * 3.5,
-                    speedX: (Math.random() - 0.5) * 1.8,
-                    rotation: Math.random() * 360,
-                    rotationSpeed: (Math.random() - 0.5) * 4
-                });
-            }
-
-            function drawHeart(x, y, size, color, angle) {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(angle * Math.PI / 180);
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                const d = size;
-                ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(-d / 2, -d / 2, -d, d / 3, 0, d);
-                ctx.bezierCurveTo(d, d / 3, d / 2, -d / 2, 0, 0);
-                ctx.fill();
-                ctx.restore();
-            }
-
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                confettiItems.forEach(p => {
-                    p.y += p.speedY;
-                    p.x += p.speedX;
-                    p.rotation += p.rotationSpeed;
-
-                    if (p.y > canvas.height) {
-                        p.y = -20;
-                        p.x = Math.random() * canvas.width;
-                    }
-
-                    if (p.shape === 'heart') {
-                        drawHeart(p.x, p.y, p.size, p.color, p.rotation);
-                    } else if (p.shape === 'sparkle') {
-                        ctx.save();
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.rotation * Math.PI / 180);
-                        ctx.fillStyle = p.color;
-                        ctx.font = `${p.size * 1.2}px serif`;
-                        ctx.fillText('✨', 0, 0);
-                        ctx.restore();
-                    } else {
-                        ctx.save();
-                        ctx.fillStyle = p.color;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.restore();
-                    }
-                });
-
-                requestAnimationFrame(animate);
-            }
-
-            animate();
-        }
-
-        // Initialize App Flow
-        document.addEventListener('DOMContentLoaded', () => {
-            createBackgroundHearts();
-            sendBotEvent('app_opened');
-
-            // Auto-transition after 2.5 seconds from Loading Screen
-            setTimeout(() => {
-                showScreen('mainScreen');
-                sendBotEvent('loaded_main_screen');
-            }, 2500);
-        });
-    </script>
+  <!-- JavaScript Application Bundle -->
+  <script src="js/config.js"></script>
+  <script src="js/security.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/components/owner.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
