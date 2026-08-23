@@ -52,6 +52,142 @@
   box-shadow: 0 4px 20px var(--red-glow);
 }
 
+/* Glass UI Authentication & Form Enhancements */
+.glass-auth-card {
+  background: rgba(18, 18, 26, 0.82) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  border: 1px solid rgba(0, 230, 118, 0.2) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 230, 118, 0.1) !important;
+  border-radius: var(--border-radius-xl);
+}
+
+/* Segmented Glass Tab Switcher */
+.glass-tab-switcher {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.glass-tab-btn {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-tab-btn.active {
+  background: linear-gradient(135deg, var(--primary-green) 0%, #00B0FF 100%);
+  color: #0A0A0F;
+  box-shadow: 0 4px 15px var(--primary-green-glow);
+}
+
+/* Social Buttons & Glowing Inputs */
+.social-auth-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  transition: all 0.25s ease;
+}
+
+.btn-tg-glow:hover, .btn-tg-glow:active {
+  border-color: #0088cc;
+  box-shadow: 0 0 15px rgba(0, 136, 204, 0.4);
+}
+
+.btn-google-glow:hover, .btn-google-glow:active {
+  border-color: #ea4335;
+  box-shadow: 0 0 15px rgba(234, 67, 53, 0.4);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.auth-divider span {
+  padding: 0 10px;
+}
+
+/* Glowing Input Fields */
+.glow-input-wrap {
+  position: relative;
+}
+
+.glow-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.glow-input:focus {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 15px var(--primary-green-glow), inset 0 0 5px rgba(0, 230, 118, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-glow-large {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow-large::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-glow-large:active::after {
+  opacity: 1;
+}
+
 /* Glass Form Inputs */
 .form-group {
   display: flex;
