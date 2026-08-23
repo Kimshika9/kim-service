@@ -71,6 +71,11 @@ const PayWellDB = {
     );
   },
 
+  findUserByEmail(email) {
+    const users = this.getUsers();
+    return users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+  },
+
   registerUser(username, email, password, telegram_id = null) {
     const users = this.getUsers();
     if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {

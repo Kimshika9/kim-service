@@ -107,17 +107,21 @@ def view_recent_receipts(message):
         )
     bot.send_message(message.chat.id, "\n".join(res), parse_mode='Markdown')
 
-@bot.message_handler(commands=['support', 'reset'])
+@bot.message_handler(commands=['support', 'reset', 'report'])
 def request_support(message):
     msg = (
-        f"🔐 *Password Recovery & Support*\n\n"
-        f"Need a password reset or system support?\n"
-        f"Contact Owner directly on Telegram: @{OWNER_USERNAME}\n\n"
-        f"State your registered username or email for identity verification."
+        f"🔐 *PayWell Bot Password Recovery & Support Ticket*\n\n"
+        f"Need a password reset or support report?\n"
+        f"1. *Via Email*: Send 6-digit verification code from PayWell app.\n"
+        f"2. *Report to Owner*: Contact Owner directly on Telegram: @{OWNER_USERNAME}\n\n"
+        f"State your registered PayWell username & Gmail for instant verification."
     )
     markup = InlineKeyboardMarkup()
-    btn = InlineKeyboardButton("📩 Message @Yuji_luke", url=f"https://t.me/{OWNER_USERNAME}")
-    markup.add(btn)
+    btn_report = InlineKeyboardButton("📩 Report Password Issue to @Yuji_luke", url=f"https://t.me/{OWNER_USERNAME}")
+    webapp = WebAppInfo(MINI_APP_URL)
+    btn_app = InlineKeyboardButton("💎 Open PayWell App", web_app=webapp)
+    markup.add(btn_report)
+    markup.add(btn_app)
     bot.send_message(message.chat.id, msg, parse_mode='Markdown', reply_markup=markup)
 
 @bot.message_handler(commands=['owner'])

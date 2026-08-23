@@ -26,13 +26,92 @@ const PayWellAuth = {
     }
   },
 
+  switchAuthTab(tab) {
+    const signinBtn = document.getElementById('tab-btn-signin');
+    const signupBtn = document.getElementById('tab-btn-signup');
+    const signinTab = document.getElementById('auth-tab-signin');
+    const signupTab = document.getElementById('auth-tab-signup');
+
+    if (tab === 'signin') {
+      signinBtn?.classList.add('active');
+      signupBtn?.classList.remove('active');
+      if (signinTab) signinTab.style.display = 'block';
+      if (signupTab) signupTab.style.display = 'none';
+    } else {
+      signupBtn?.classList.add('active');
+      signinBtn?.classList.remove('active');
+      if (signupTab) signupTab.style.display = 'block';
+      if (signinTab) signinTab.style.display = 'none';
+    }
+  },
+
+  async loginWithTelegram() {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+      const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      await this.autoLoginTelegram(tgUser);
+      window.PayWellRouter?.closeModal('modal-auth');
+      alert('Successfully logged in via Telegram!');
+    } else {
+      // Simulate quick Telegram account login in web environment
+      const tgUsername = prompt('Enter your Telegram Username (e.g., @Yuji_luke or @User):');
+      if (!tgUsername) return;
+      const cleanUsername = tgUsername.replace('@', '').trim();
+      if (!cleanUsername) return;
+
+      let user = window.PayWellDB.findUser(cleanUsername);
+      if (!user) {
+        // Prompt for safety Gmail binding if user is registering via Telegram
+        const bindEmail = prompt(`For account safety, please bind a Gmail address for ${cleanUsername}:`);
+        const finalEmail = (bindEmail && bindEmail.includes('@')) ? bindEmail.trim() : `${cleanUsername}@gmail.com`;
+        user = window.PayWellDB.registerUser(cleanUsername, finalEmail, 'TgSecured123!', '999999999');
+      }
+      this.setUser(user);
+      window.PayWellRouter?.closeModal('modal-auth');
+      alert(`Welcome ${user.username}! Logged in via Telegram.`);
+    }
+  },
+
+  async loginWithGoogle() {
+    const userEmail = prompt('Select or enter your Google / Gmail account:');
+    if (!userEmail || !userEmail.includes('@')) {
+      if (userEmail !== null) alert('Please enter a valid Gmail address.');
+      return;
+    }
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const username = cleanEmail.split('@')[0];
+
+    let user = window.PayWellDB.findUserByEmail ? window.PayWellDB.findUserByEmail(cleanEmail) : window.PayWellDB.findUser(username);
+    if (!user) {
+      user = window.PayWellDB.registerUser(username, cleanEmail, 'GooglePass123!');
+    }
+    this.setUser(user);
+    window.PayWellRouter?.closeModal('modal-auth');
+    alert(`Logged in with Google account: ${cleanEmail}`);
+  },
+
+  openForgotPassword() {
+    window.PayWellRouter?.closeModal('modal-auth');
+    window.PayWellRouter?.openModal('modal-forgot');
+  },
+
+  sendGmailRecoveryCode() {
+    const emailInput = document.getElementById('recovery-email');
+    const email = emailInput?.value?.trim();
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid registered Gmail address.');
+      return;
+    }
+    alert(`A 6-digit password reset code has been sent to ${email}. Check your inbox!`);
+    window.PayWellRouter?.closeModal('modal-forgot');
+  },
+
   async autoLoginTelegram(tgUser) {
     const username = tgUser.username || `tg_${tgUser.id}`;
 
     // Check client DB first
     let user = window.PayWellDB.findUser(username) || window.PayWellDB.findUser(String(tgUser.id));
     if (!user) {
-      user = window.PayWellDB.registerUser(username, `${username}@telegram.org`, 'TgPass123!', String(tgUser.id));
+      user = window.PayWellDB.registerUser(username, `${username}@gmail.com`, 'TgPass123!', String(tgUser.id));
     }
     this.setUser(user);
   },

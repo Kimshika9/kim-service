@@ -205,46 +205,116 @@
 
     <!-- MODALS SECTION -->
 
-    <!-- AUTHENTICATION MODAL -->
-    <div id="modal-auth" class="modal-overlay">
-      <div class="modal-content">
-        <div style="text-align:center; margin-bottom:20px;">
-          <div class="pw-hexagon" style="margin:0 auto 12px auto; width:50px; height:50px; font-size:22px;">PW</div>
-          <h2 class="font-heading">Welcome to PayWell</h2>
-          <div style="font-size:12px; color:var(--text-muted);">Sign in or create a community account</div>
+    <!-- AUTHENTICATION MODAL (Glass UI Classic & Professional) -->
+    <div id="modal-auth" class="modal-overlay modal-auth-overlay">
+      <div class="modal-content glass-auth-card">
+        <div style="text-align:center; margin-bottom:16px;">
+          <div class="pw-hexagon glow-pulse-green" style="margin:0 auto 10px auto; width:56px; height:56px; font-size:24px;">PW</div>
+          <h2 class="font-heading" style="font-size:22px; letter-spacing:0.02em;">Welcome to PayWell</h2>
+          <div style="font-size:12px; color:var(--text-muted);">Premium Community Payment Gateway</div>
         </div>
 
-        <!-- Login Form -->
-        <form id="form-login">
-          <div class="form-group">
-            <label class="form-label">Username or Email</label>
-            <input type="text" id="login-ident" class="form-input" required placeholder="e.g. Yuji_luke">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="login-pwd" class="form-input" required placeholder="••••••••">
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:10px;">Sign In</button>
-        </form>
+        <!-- Glass Segmented Tab Switcher -->
+        <div class="glass-tab-switcher">
+          <button type="button" id="tab-btn-signin" class="glass-tab-btn active" onclick="PayWellAuth.switchAuthTab('signin')">Sign In</button>
+          <button type="button" id="tab-btn-signup" class="glass-tab-btn" onclick="PayWellAuth.switchAuthTab('signup')">Sign Up</button>
+        </div>
 
-        <div style="text-align:center; margin:16px 0; font-size:12px; color:var(--text-muted);">OR</div>
+        <!-- Quick Social Logins -->
+        <div class="social-auth-grid" style="margin-bottom:16px;">
+          <button type="button" onclick="PayWellAuth.loginWithTelegram()" class="btn btn-glass social-btn btn-tg-glow">
+            <span style="font-size:18px;">✈️</span> <span>Continue with Telegram</span>
+          </button>
+          <button type="button" onclick="PayWellAuth.loginWithGoogle()" class="btn btn-glass social-btn btn-google-glow">
+            <span style="font-size:18px;">🌐</span> <span>Continue with Google</span>
+          </button>
+        </div>
 
-        <!-- Registration Toggle -->
-        <form id="form-register">
-          <div class="form-group">
-            <label class="form-label">Choose Username</label>
-            <input type="text" id="reg-username" class="form-input" required placeholder="e.g. CommunityMember">
+        <div class="auth-divider">
+          <span>OR WITH CREDENTIALS</span>
+        </div>
+
+        <!-- SIGN IN TAB VIEW -->
+        <div id="auth-tab-signin" class="auth-tab-content active">
+          <form id="form-login" onsubmit="event.preventDefault(); PayWellAuth.submitLogin();">
+            <div class="form-group">
+              <label class="form-label">Username or Email</label>
+              <div class="glow-input-wrap">
+                <input type="text" id="login-ident" class="form-input glow-input" required placeholder="e.g. Yuji_luke">
+              </div>
+            </div>
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label class="form-label">Password</label>
+                <a href="#" onclick="PayWellAuth.openForgotPassword()" style="font-size:11px; color:var(--primary-green); text-decoration:none;">Forgot Password?</a>
+              </div>
+              <div class="glow-input-wrap">
+                <input type="password" id="login-pwd" class="form-input glow-input" required placeholder="••••••••">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-glow-large" style="margin-top:12px;">Sign In to Wallet</button>
+          </form>
+        </div>
+
+        <!-- SIGN UP TAB VIEW -->
+        <div id="auth-tab-signup" class="auth-tab-content" style="display:none;">
+          <form id="form-register" onsubmit="event.preventDefault(); PayWellAuth.submitRegister();">
+            <div class="form-group">
+              <label class="form-label">Choose Username</label>
+              <div class="glow-input-wrap">
+                <input type="text" id="reg-username" class="form-input glow-input" required placeholder="e.g. CommunityMember">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gmail / Google Email (Required for Safety)</label>
+              <div class="glow-input-wrap">
+                <input type="email" id="reg-email" class="form-input glow-input" required placeholder="user@gmail.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <div class="glow-input-wrap">
+                <input type="password" id="reg-pwd" class="form-input glow-input" required placeholder="••••••••">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-glow-large" style="margin-top:12px;">Create Premium Account</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD / RECOVERY MODAL -->
+    <div id="modal-forgot" class="modal-overlay">
+      <div class="modal-content glass-auth-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 class="font-heading" style="color:var(--primary-green);">Account Recovery</h3>
+          <button type="button" onclick="PayWellRouter.closeModal('modal-forgot')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Choose your preferred method to reset your password:</div>
+
+        <div class="recovery-options" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Option 1: Gmail Verification Code -->
+          <div class="glass-card" style="padding:14px; border:1px solid var(--border-glass);">
+            <div style="font-weight:700; color:var(--text-primary); margin-bottom:4px;">1. Reset via Gmail Verification Code</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">We will send a 6-digit security code to your registered Gmail address.</div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="email" id="recovery-email" class="form-input glow-input" placeholder="Enter your registered Gmail">
+            </div>
+            <button type="button" onclick="PayWellAuth.sendGmailRecoveryCode()" class="btn btn-primary" style="padding:8px 12px; font-size:12px;">Send 6-Digit Code</button>
           </div>
-          <div class="form-group">
-            <label class="form-label">Email Address (Optional)</label>
-            <input type="email" id="reg-email" class="form-input" placeholder="user@gmail.com">
+
+          <!-- Option 2: Report to Bot / Support Ticket -->
+          <div class="glass-card" style="padding:14px; border:1px solid var(--border-glass);">
+            <div style="font-weight:700; color:var(--gold-accent); margin-bottom:4px;">2. Report to PayWell Bot / Owner</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Submit a support report ticket directly via our official PayWell Bot.</div>
+            <a href="https://t.me/Yuji_luke" target="_blank" class="btn btn-gold" style="text-decoration:none; padding:8px 12px; font-size:12px;">
+              <span>🤖</span> Report Password Issue via Bot (@Yuji_luke)
+            </a>
           </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="reg-pwd" class="form-input" required placeholder="••••••••">
-          </div>
-          <button type="submit" class="btn btn-glass">Create New Account</button>
-        </form>
+        </div>
+
       </div>
     </div>
 
