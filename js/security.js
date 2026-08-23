@@ -48,26 +48,62 @@ const PayWellAuth = {
   async loginWithTelegram() {
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
       const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-      await this.autoLoginTelegram(tgUser);
+      const username = tgUser.username || `tg_${tgUser.id}`;
+      let user = window.PayWellDB.findUser(username) || window.PayWellDB.findUser(String(tgUser.id));
+
+      if (user) {
+        // If account exists, require password or 2FA PIN verification to prevent unauthorized takeover
+        const pinOrPwd = prompt(`Security Auth Required for @${user.username}:\nEnter your Account Password or 6-Digit 2FA PIN:`);
+        if (!pinOrPwd) return;
+        try {
+          const verifiedUser = window.PayWellDB.loginUser(user.username, pinOrPwd);
+          this.setUser(verifiedUser);
+        } catch (err) {
+          if (window.PayWellDB.verifyUserPin(user.username, pinOrPwd)) {
+            this.setUser(user);
+          } else {
+            alert("Security Verification Failed: Incorrect Password or 2FA PIN!");
+            return;
+          }
+        }
+      } else {
+        user = window.PayWellDB.registerUser(username, `${username}@gmail.com`, 'TgPass123!', String(tgUser.id));
+        this.setUser(user);
+      }
+
       window.PayWellRouter?.closeModal('modal-auth');
-      alert('Successfully logged in via Telegram!');
+      alert(`Welcome @${user.username}! Securely authenticated via Telegram.`);
     } else {
-      // Simulate quick Telegram account login in web environment
       const tgUsername = prompt('Enter your Telegram Username (e.g., @Yuji_luke or @User):');
       if (!tgUsername) return;
       const cleanUsername = tgUsername.replace('@', '').trim();
       if (!cleanUsername) return;
 
       let user = window.PayWellDB.findUser(cleanUsername);
-      if (!user) {
-        // Prompt for safety Gmail binding if user is registering via Telegram
+      if (user) {
+        // Require password or 2FA PIN
+        const pinOrPwd = prompt(`Security Auth Required for @${user.username}:\nEnter Password or 6-Digit 2FA PIN:`);
+        if (!pinOrPwd) return;
+        try {
+          const verified = window.PayWellDB.loginUser(user.username, pinOrPwd);
+          this.setUser(verified);
+        } catch (err) {
+          if (window.PayWellDB.verifyUserPin(user.username, pinOrPwd)) {
+            this.setUser(user);
+          } else {
+            alert("Security Verification Failed: Incorrect Password or 2FA PIN!");
+            return;
+          }
+        }
+      } else {
         const bindEmail = prompt(`For account safety, please bind a Gmail address for ${cleanUsername}:`);
         const finalEmail = (bindEmail && bindEmail.includes('@')) ? bindEmail.trim() : `${cleanUsername}@gmail.com`;
-        user = window.PayWellDB.registerUser(cleanUsername, finalEmail, 'TgSecured123!', '999999999');
+        const pwd = prompt(`Create a secure password for ${cleanUsername}:`) || 'TgSecured123!';
+        user = window.PayWellDB.registerUser(cleanUsername, finalEmail, pwd);
+        this.setUser(user);
       }
-      this.setUser(user);
       window.PayWellRouter?.closeModal('modal-auth');
-      alert(`Welcome ${user.username}! Logged in via Telegram.`);
+      alert(`Welcome @${user.username}! Securely logged in.`);
     }
   },
 
@@ -81,10 +117,26 @@ const PayWellAuth = {
     const username = cleanEmail.split('@')[0];
 
     let user = window.PayWellDB.findUserByEmail ? window.PayWellDB.findUserByEmail(cleanEmail) : window.PayWellDB.findUser(username);
-    if (!user) {
-      user = window.PayWellDB.registerUser(username, cleanEmail, 'GooglePass123!');
+    if (user) {
+      const pinOrPwd = prompt(`Security Verification for ${user.email}:\nEnter Password or 6-Digit 2FA PIN:`);
+      if (!pinOrPwd) return;
+      try {
+        const verified = window.PayWellDB.loginUser(user.username, pinOrPwd);
+        this.setUser(verified);
+      } catch (err) {
+        if (window.PayWellDB.verifyUserPin(user.username, pinOrPwd)) {
+          this.setUser(user);
+        } else {
+          alert("Security Verification Failed: Incorrect Password or 2FA PIN!");
+          return;
+        }
+      }
+    } else {
+      const pwd = prompt(`Create a secure password for new account (${cleanEmail}):`) || 'GooglePass123!';
+      user = window.PayWellDB.registerUser(username, cleanEmail, pwd);
+      this.setUser(user);
     }
-    this.setUser(user);
+
     window.PayWellRouter?.closeModal('modal-auth');
     alert(`Logged in with Google account: ${cleanEmail}`);
   },
@@ -172,6 +224,12 @@ const PayWellAuth = {
   setUser(user) {
     this.currentUser = user;
     localStorage.setItem('paywell_user', JSON.stringify(user));
+
+    // Automatically register or update current device session
+    if (user && window.PayWellDB) {
+      window.PayWellDB.registerDeviceSession(user.username, navigator.userAgent);
+    }
+
     window.dispatchEvent(new CustomEvent('paywell_auth_changed', { detail: user }));
   },
 

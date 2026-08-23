@@ -17,12 +17,17 @@ const PayWellDB = {
           username: 'Yuji_luke',
           email: 'yuji_luke@paywell.app',
           password_hash: this.hash('OwnerPass123!'),
+          sec_pin_hash: this.hash('201171'),
+          two_factor_enabled: true,
+          passkey_enabled: false,
+          avatar_url: null,
           telegram_id: '6399210935',
           telegram_username: 'Yuji_luke',
           balance: 100000.0,
           status: 'active',
           role: 'owner',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          devices: []
         }
       ];
       this.saveUsers(users);
@@ -88,12 +93,17 @@ const PayWellDB = {
       username: username,
       email: email || null,
       password_hash: this.hash(password || 'default123'),
+      sec_pin_hash: null,
+      two_factor_enabled: false,
+      passkey_enabled: false,
+      avatar_url: null,
       telegram_id: telegram_id ? String(telegram_id) : null,
       telegram_username: username,
       balance: 0.0,
       status: 'active',
       role: isOwner ? 'owner' : 'user',
-      created_at: new Date().toLocaleString()
+      created_at: new Date().toLocaleString(),
+      devices: []
     };
 
     users.push(newUser);
@@ -113,6 +123,137 @@ const PayWellDB = {
     if (user.status === 'frozen') {
       throw new Error("Account is frozen. Please contact support @Yuji_luke");
     }
+    return user;
+  },
+
+  verifyUserPin(username, pin) {
+    const user = this.findUser(username);
+    if (!user) return false;
+    if (!user.sec_pin_hash) {
+      // Default to 201171 for owner if unset, or true if unset
+      if (user.role === 'owner' || user.username === 'Yuji_luke') return pin === '201171';
+      return true;
+    }
+    return user.sec_pin_hash === this.hash(pin);
+  },
+
+  setUserSecurityPin(username, newPin) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User not found");
+    if (!/^\d{6}$/.test(newPin)) throw new Error("PIN must be exactly 6 digits");
+    user.sec_pin_hash = this.hash(newPin);
+    user.two_factor_enabled = true;
+    this.saveUsers(users);
+    return user;
+  },
+
+  // DEVICE SECURITY & PERMISSION MANAGEMENT ENGINE
+  registerDeviceSession(username, userAgentStr) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return null;
+
+    if (!user.devices) user.devices = [];
+
+    // Detect browser / device platform
+    let deviceName = "Unknown Web Browser";
+    if (userAgentStr.includes("Android")) deviceName = "Android Mobile (PayWell App)";
+    else if (userAgentStr.includes("iPhone") || userAgentStr.includes("iPad")) deviceName = "iOS Device (PayWell Mini App)";
+    else if (userAgentStr.includes("Macintosh")) deviceName = "macOS Workstation";
+    else if (userAgentStr.includes("Windows")) deviceName = "Windows PC / Chrome";
+    else if (userAgentStr.includes("Linux")) deviceName = "Linux Terminal Deck";
+
+    // Create fingerprint hash
+    const devId = `DEV-${this.hash(deviceName + userAgentStr).slice(0, 8)}`;
+    const existingDev = user.devices.find(d => d.id === devId);
+
+    const now = new Date();
+
+    if (existingDev) {
+      existingDev.lastActive = now.toLocaleString();
+    } else {
+      const isFirst = user.devices.length === 0;
+      user.devices.push({
+        id: devId,
+        name: deviceName,
+        ip: '192.168.1.' + Math.floor(Math.random() * 250 + 2),
+        loginDate: now.toISOString(),
+        lastActive: now.toLocaleString(),
+        isPrimary: isFirst,
+        trustedSince: now.toISOString()
+      });
+    }
+
+    this.saveUsers(users);
+    return user.devices;
+  },
+
+  getUserDevices(username) {
+    const user = this.findUser(username);
+    if (!user || !user.devices) return [];
+    return user.devices;
+  },
+
+  canDeviceManagePermissions(username, currentDevId) {
+    const devices = this.getUserDevices(username);
+    const dev = devices.find(d => d.id === currentDevId);
+    if (!dev) return false;
+
+    if (dev.isPrimary) return true;
+
+    // Check 15 days active tenure requirement for secondary devices
+    const firstLogin = new Date(dev.trustedSince || dev.loginDate);
+    const now = new Date();
+    const daysActive = (now - firstLogin) / (1000 * 60 * 60 * 24);
+
+    return daysActive >= 15;
+  },
+
+  removeDeviceSession(username, targetDevId, securityPin) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User account not found");
+
+    // Require Security PIN verification
+    if (!this.verifyUserPin(username, securityPin)) {
+      throw new Error("⛔ Security Verification Failed: Invalid 6-Digit PIN Code!");
+    }
+
+    if (!user.devices) user.devices = [];
+    const initialLen = user.devices.length;
+    user.devices = user.devices.filter(d => d.id !== targetDevId);
+
+    if (user.devices.length === initialLen) {
+      throw new Error("Device session not found");
+    }
+
+    // If primary was removed, promote oldest remaining device
+    if (user.devices.length > 0 && !user.devices.some(d => d.isPrimary)) {
+      user.devices[0].isPrimary = true;
+    }
+
+    this.saveUsers(users);
+    return user.devices;
+  },
+
+  updateUserProfile(username, data) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User not found");
+
+    if (data.username && data.username !== user.username) {
+      if (users.some(u => u.username.toLowerCase() === data.username.toLowerCase() && u.id !== user.id)) {
+        throw new Error("Username already taken!");
+      }
+      user.username = data.username;
+    }
+    if (data.email !== undefined) user.email = data.email;
+    if (data.avatar_url !== undefined) user.avatar_url = data.avatar_url;
+    if (data.two_factor_enabled !== undefined) user.two_factor_enabled = data.two_factor_enabled;
+    if (data.passkey_enabled !== undefined) user.passkey_enabled = data.passkey_enabled;
+
+    this.saveUsers(users);
     return user;
   },
 

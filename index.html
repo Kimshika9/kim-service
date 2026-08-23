@@ -105,7 +105,20 @@
 
       <!-- 2. ACTIVITY HISTORY VIEW -->
       <section id="view-activity" class="app-view" style="display:none;">
-        <h2 style="margin-bottom:16px;" data-i18n="recentActivity">Transaction History</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2 data-i18n="recentActivity">Transaction History</h2>
+          <span style="font-size:11px; background:rgba(0,230,118,0.15); color:var(--primary-green); padding:4px 8px; border-radius:12px; font-weight:700;">🔒 IMMUTABLE PROOF ENGINE</span>
+        </div>
+
+        <!-- Activity Category Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:16px; overflow-x:auto;">
+          <button id="tx-filter-all" onclick="PayWellApp.filterTransactions('all')" class="btn btn-primary" style="padding:6px 12px; font-size:11px;">All Activity</button>
+          <button id="tx-filter-sent" onclick="PayWellApp.filterTransactions('sent')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">📤 Sent</button>
+          <button id="tx-filter-received" onclick="PayWellApp.filterTransactions('received')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">📥 Received</button>
+          <button id="tx-filter-store" onclick="PayWellApp.filterTransactions('store')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">🏪 Store & PFT</button>
+          <button id="tx-filter-rewards" onclick="PayWellApp.filterTransactions('rewards')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">🎁 Rewards</button>
+        </div>
+
         <div id="full-tx-list"></div>
       </section>
 
@@ -153,7 +166,40 @@
 
       <!-- 4. PROFILE & SETTINGS VIEW -->
       <section id="view-profile" class="app-view" style="display:none;">
-        <h2 style="margin-bottom:16px;" data-i18n="profile">User Profile</h2>
+
+        <!-- Custom Avatar & Profile Card -->
+        <div class="glass-card glass-card-green" style="padding:24px; text-align:center; margin-bottom:20px; position:relative;">
+          <button onclick="PayWellRouter.openModal('modal-settings')" class="btn btn-glass" style="position:absolute; top:12px; right:12px; width:auto; padding:6px 12px; font-size:12px;">
+            ⚙️ Settings
+          </button>
+
+          <div style="position:relative; width:90px; height:90px; margin:0 auto 12px auto;">
+            <img id="profile-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=PayWellUser" style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid var(--primary-green); background:#12121A;" alt="Avatar">
+            <button onclick="document.getElementById('avatar-file-input').click()" style="position:absolute; bottom:0; right:0; background:var(--primary-green); color:#000; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; font-weight:bold;">📷</button>
+            <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="PayWellApp.handleAvatarUpload(event)">
+          </div>
+
+          <h2 id="profile-display-name" class="font-heading" style="font-size:20px; color:var(--text-primary); margin-bottom:2px;">@User</h2>
+          <div id="profile-role-badge" style="font-size:11px; font-weight:700; color:var(--primary-green); letter-spacing:0.05em;">VERIFIED COMMUNITY MEMBER</div>
+
+          <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+            <span id="badge-email-ver" class="badge" style="background:rgba(0,230,118,0.15); color:var(--primary-green); padding:4px 10px; border-radius:12px; font-size:11px;">✓ Gmail Verified</span>
+            <span id="badge-tg-ver" class="badge" style="background:rgba(0,180,216,0.15); color:var(--secondary-blue); padding:4px 10px; border-radius:12px; font-size:11px;">✈️ Telegram Linked</span>
+          </div>
+        </div>
+
+        <!-- Quick Profile Settings Deck -->
+        <div class="glass-card" style="padding:18px; margin-bottom:16px;">
+          <div style="font-weight:700; font-size:14px; margin-bottom:12px; color:var(--text-primary);">⚡ Quick Actions</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="PayWellRouter.openModal('modal-settings')" class="btn btn-glass" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>🛡️ High Security & Devices Deck</span> <span>➔</span>
+            </button>
+            <button onclick="PayWellApp.openEditProfileModal()" class="btn btn-glass" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>✏️ Change Username / Profile</span> <span>➔</span>
+            </button>
+          </div>
+        </div>
 
         <div class="glass-card" style="padding:20px; margin-bottom:16px;">
           <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;" data-i18n="language">Language / နေ့စဉ်သုံးဘာသာစကား</div>
@@ -495,6 +541,82 @@
 
           <button onclick="PayWellRouter.closeModal('modal-receipt')" class="btn btn-primary" style="margin-top:12px;">Done</button>
         </div>
+      </div>
+    </div>
+
+    <!-- HIGH-SYSTEM SETTINGS & SECURITY MODAL -->
+    <div id="modal-settings" class="modal-overlay">
+      <div class="modal-content glass-card" style="max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 class="font-heading" style="color:var(--primary-green);">🛡️ High Security & Settings Deck</h3>
+          <button onclick="PayWellRouter.closeModal('modal-settings')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <!-- Settings Category Switcher -->
+        <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border-glass); padding-bottom:8px;">
+          <button id="set-tab-btn-sec" onclick="PayWellApp.switchSettingsTab('sec')" class="btn btn-primary" style="padding:6px 10px; font-size:11px;">🔒 2FA & PIN</button>
+          <button id="set-tab-btn-dev" onclick="PayWellApp.switchSettingsTab('dev')" class="btn btn-glass" style="padding:6px 10px; font-size:11px;">📱 Active Devices</button>
+          <button id="set-tab-btn-ver" onclick="PayWellApp.switchSettingsTab('ver')" class="btn btn-glass" style="padding:6px 10px; font-size:11px;">✓ Verification</button>
+        </div>
+
+        <!-- 1. 2FA & SECURITY TAB -->
+        <div id="set-tab-sec" style="display:block;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:8px;">6-Digit Security PIN & 2FA</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Set or update your 6-digit security PIN to authorize high-security actions like session removals and large transfers.</div>
+
+          <div class="form-group">
+            <label class="form-label">New 6-Digit PIN</label>
+            <input type="password" id="set-sec-pin" maxlength="6" class="form-input glow-input" placeholder="••••••">
+          </div>
+          <button onclick="PayWellApp.saveSecurityPin()" class="btn btn-primary" style="margin-bottom:16px;">Save 6-Digit PIN</button>
+
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:8px;">Passkey & Biometric Authentication</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:8px; border:1px solid var(--border-glass);">
+            <div>
+              <div style="font-weight:600; font-size:12px;">WebAuthn Passkey / Biometrics</div>
+              <div style="font-size:10px; color:var(--text-muted);">Use fingerprint or FaceID for instant login</div>
+            </div>
+            <button onclick="PayWellApp.togglePasskey()" id="btn-toggle-passkey" class="btn btn-glass" style="width:auto; padding:4px 10px; font-size:11px;">Enable</button>
+          </div>
+        </div>
+
+        <!-- 2. ACTIVE DEVICES TAB -->
+        <div id="set-tab-dev" style="display:none;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:4px;">Logged In Devices & Permissions</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Primary devices can remove session locks immediately. Secondary devices require 15 active days of tenure or 6-Digit PIN confirmation.</div>
+
+          <div id="settings-devices-list" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- JS populated -->
+          </div>
+        </div>
+
+        <!-- 3. VERIFICATION BADGES TAB -->
+        <div id="set-tab-ver" style="display:none;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:8px;">Third-Party Identity Verification</div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div class="glass-card" style="padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:13px;">🌐 Google / Gmail Binding</div>
+                  <div id="ver-email-label" style="font-size:11px; color:var(--text-muted);">yuji@gmail.com</div>
+                </div>
+                <span style="color:var(--primary-green); font-size:11px; font-weight:700;">VERIFIED</span>
+              </div>
+            </div>
+
+            <div class="glass-card" style="padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:600; font-size:13px;">✈️ Telegram WebApp Handshake</div>
+                  <div id="ver-tg-label" style="font-size:11px; color:var(--text-muted);">Telegram ID: 6399210935</div>
+                </div>
+                <span style="color:var(--secondary-blue); font-size:11px; font-weight:700;">CONNECTED</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 

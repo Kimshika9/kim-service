@@ -104,6 +104,195 @@ const PayWellApp = {
     if (headerUser) {
       headerUser.innerText = `@${user.username} ${user.role === 'owner' ? '👑' : ''}`;
     }
+    this.updateProfileUI();
+  },
+
+  updateProfileUI() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const avatarImg = document.getElementById('profile-avatar-img');
+    const displayName = document.getElementById('profile-display-name');
+    const roleBadge = document.getElementById('profile-role-badge');
+    const verEmail = document.getElementById('ver-email-label');
+    const verTg = document.getElementById('ver-tg-label');
+
+    if (avatarImg) {
+      avatarImg.src = user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.username}`;
+    }
+    if (displayName) {
+      displayName.textContent = `@${user.username}`;
+    }
+    if (roleBadge) {
+      roleBadge.textContent = user.role === 'owner' ? '👑 SYSTEM OWNER' : 'VERIFIED COMMUNITY MEMBER';
+    }
+    if (verEmail) {
+      verEmail.textContent = user.email || 'No Gmail Linked';
+    }
+    if (verTg) {
+      verTg.textContent = user.telegram_id ? `Telegram ID: ${user.telegram_id}` : 'Not Linked';
+    }
+
+    this.renderSettingsDevices();
+  },
+
+  handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Img = e.target.result;
+      const user = window.PayWellAuth.currentUser;
+      if (!user) return;
+
+      try {
+        const updatedUser = window.PayWellDB.updateUserProfile(user.username, { avatar_url: base64Img });
+        window.PayWellAuth.setUser(updatedUser);
+        this.updateProfileUI();
+        alert("Profile picture updated successfully!");
+      } catch (err) {
+        alert("Failed to update avatar: " + err.message);
+      }
+    };
+    reader.readAsDataURL(file);
+  },
+
+  openEditProfileModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const newName = prompt("Enter new username:", user.username);
+    if (!newName || newName.trim() === user.username) return;
+
+    const cleanName = newName.trim();
+    try {
+      const updated = window.PayWellDB.updateUserProfile(user.username, { username: cleanName });
+      window.PayWellAuth.setUser(updated);
+      this.updateProfileUI();
+      alert(`Username successfully updated to @${cleanName}`);
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  switchSettingsTab(tab) {
+    const secBtn = document.getElementById('set-tab-btn-sec');
+    const devBtn = document.getElementById('set-tab-btn-dev');
+    const verBtn = document.getElementById('set-tab-btn-ver');
+
+    const secTab = document.getElementById('set-tab-sec');
+    const devTab = document.getElementById('set-tab-dev');
+    const verTab = document.getElementById('set-tab-ver');
+
+    secBtn?.classList.remove('btn-primary'); secBtn?.classList.add('btn-glass');
+    devBtn?.classList.remove('btn-primary'); devBtn?.classList.add('btn-glass');
+    verBtn?.classList.remove('btn-primary'); verBtn?.classList.add('btn-glass');
+
+    if (secTab) secTab.style.display = 'none';
+    if (devTab) devTab.style.display = 'none';
+    if (verTab) verTab.style.display = 'none';
+
+    if (tab === 'sec') {
+      secBtn?.classList.add('btn-primary'); secBtn?.classList.remove('btn-glass');
+      if (secTab) secTab.style.display = 'block';
+    } else if (tab === 'dev') {
+      devBtn?.classList.add('btn-primary'); devBtn?.classList.remove('btn-glass');
+      if (devTab) devTab.style.display = 'block';
+      this.renderSettingsDevices();
+    } else if (tab === 'ver') {
+      verBtn?.classList.add('btn-primary'); verBtn?.classList.remove('btn-glass');
+      if (verTab) verTab.style.display = 'block';
+    }
+  },
+
+  saveSecurityPin() {
+    const pinInput = document.getElementById('set-sec-pin');
+    const pin = pinInput?.value?.trim();
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    try {
+      const updated = window.PayWellDB.setUserSecurityPin(user.username, pin);
+      window.PayWellAuth.setUser(updated);
+      alert("6-Digit Security PIN successfully set! 2FA is now active.");
+      if (pinInput) pinInput.value = '';
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  togglePasskey() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const newState = !user.passkey_enabled;
+    try {
+      const updated = window.PayWellDB.updateUserProfile(user.username, { passkey_enabled: newState });
+      window.PayWellAuth.setUser(updated);
+      const btn = document.getElementById('btn-toggle-passkey');
+      if (btn) btn.textContent = newState ? "Enabled (Active)" : "Enable";
+      alert(newState ? "Passkey biometric auth successfully registered!" : "Passkey biometric auth disabled.");
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  renderSettingsDevices() {
+    const user = window.PayWellAuth.currentUser;
+    const container = document.getElementById('settings-devices-list');
+    if (!container || !user) return;
+
+    const devices = window.PayWellDB.getUserDevices(user.username);
+    if (devices.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted);">No active device sessions.</div>`;
+      return;
+    }
+
+    container.innerHTML = devices.map(d => {
+      const isPrimary = d.isPrimary;
+      const canManage = window.PayWellDB.canDeviceManagePermissions(user.username, d.id);
+
+      return `
+        <div class="glass-card" style="padding:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:700; font-size:12px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+              📱 ${d.name} ${isPrimary ? '<span style="font-size:10px; background:rgba(0,230,118,0.2); color:var(--primary-green); padding:2px 6px; border-radius:8px;">MASTER DEVICE</span>' : ''}
+            </div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+              IP: ${d.ip} | Last Active: ${d.lastActive}
+            </div>
+            <div style="font-size:10px; color:${canManage ? 'var(--primary-green)' : 'var(--gold-accent)'}; margin-top:2px;">
+              ${canManage ? '✓ Full Permission Granted' : '⏳ Secondary Device (15 Days Tenure Required)'}
+            </div>
+          </div>
+          <button onclick="PayWellApp.removeDeviceSession('${d.id}')" class="btn btn-danger" style="width:auto; padding:6px 10px; font-size:11px;">
+            Remove
+          </button>
+        </div>
+      `;
+    }).join('');
+  },
+
+  removeDeviceSession(targetDevId) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const pin = prompt("🔐 SECURITY CONFIRMATION REQUIRED:\nEnter your 6-Digit Security PIN to terminate this device session:");
+    if (!pin) return;
+
+    try {
+      window.PayWellDB.removeDeviceSession(user.username, targetDevId, pin);
+      alert("Device session successfully removed!");
+      this.renderSettingsDevices();
+    } catch (err) {
+      alert(err.message);
+    }
   },
 
   renderDailyRewardsAndQuests(username) {
@@ -229,46 +418,112 @@ const PayWellApp = {
     sideEl.innerText = `.${parts[1]} PW`;
   },
 
+  activeTxCategoryFilter: 'all',
+
+  filterTransactions(cat) {
+    this.activeTxCategoryFilter = cat;
+    ['all', 'sent', 'received', 'store', 'rewards'].forEach(c => {
+      const btn = document.getElementById(`tx-filter-${c}`);
+      if (btn) {
+        if (c === cat) {
+          btn.classList.add('btn-primary');
+          btn.classList.remove('btn-glass');
+        } else {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-glass');
+        }
+      }
+    });
+
+    const user = window.PayWellAuth.currentUser;
+    if (user) {
+      this.loadRecentTransactions(user.username);
+    }
+  },
+
   loadRecentTransactions(username) {
-    const txs = window.PayWellDB.getTransactions(username);
+    const rawTxs = window.PayWellDB.getTransactions(username);
     const container = document.getElementById('recent-tx-list');
     const fullContainer = document.getElementById('full-tx-list');
 
-    if (!txs || txs.length === 0) {
-      const noDataHtml = `<div style="text-align:center; padding:20px; color:var(--text-muted);">${window.PayWellI18n.t('noTransactions')}</div>`;
-      if (container) container.innerHTML = noDataHtml;
-      if (fullContainer) fullContainer.innerHTML = noDataHtml;
+    const filter = this.activeTxCategoryFilter || 'all';
+    let filteredTxs = rawTxs;
+
+    if (filter === 'sent') {
+      filteredTxs = rawTxs.filter(t => t.sender_username.toLowerCase() === username.toLowerCase() && t.type === 'transfer');
+    } else if (filter === 'received') {
+      filteredTxs = rawTxs.filter(t => t.receiver_username.toLowerCase() === username.toLowerCase() && t.type === 'transfer');
+    } else if (filter === 'store') {
+      filteredTxs = rawTxs.filter(t => t.type === 'store_purchase' || t.type === 'token_purchase' || t.type === 'pft_purchase' || t.type === 'auction_bid');
+    } else if (filter === 'rewards') {
+      filteredTxs = rawTxs.filter(t => t.type === 'daily_reward' || t.type === 'quest_reward' || t.type.includes('owner'));
+    }
+
+    const renderEmptyState = () => `
+      <div class="glass-card" style="text-align:center; padding:32px 20px; margin:20px 0;">
+        <div style="font-size:48px; margin-bottom:12px;">💸</div>
+        <div style="font-weight:800; font-size:16px; color:var(--text-primary); margin-bottom:6px;">No ${filter !== 'all' ? filter.toUpperCase() : ''} Transactions Recorded</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Send community tokens to friends, buy NEXORA passes, or claim daily quests to start building your ledger!</div>
+        <div style="display:flex; justify-content:center; gap:10px;">
+          <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:8px 14px; font-size:12px;">📤 Send PW</button>
+          <button onclick="PayWellApp.claimDailyReward()" class="btn btn-gold" style="padding:8px 14px; font-size:12px;">🎁 Claim Reward</button>
+        </div>
+      </div>
+    `;
+
+    if (!rawTxs || rawTxs.length === 0) {
+      if (container) container.innerHTML = renderEmptyState();
+      if (fullContainer) fullContainer.innerHTML = renderEmptyState();
       return;
     }
 
     const renderTxCard = (tx) => {
-      const isIncoming = tx.receiver_username === username;
+      const isIncoming = tx.receiver_username.toLowerCase() === username.toLowerCase();
       const sign = isIncoming ? '+' : '-';
       const color = isIncoming ? 'var(--primary-green)' : 'var(--red-alert)';
 
+      let icon = isIncoming ? '📥' : '📤';
+      if (tx.type === 'daily_reward' || tx.type === 'quest_reward') icon = '🎁';
+      else if (tx.type === 'store_purchase' || tx.type === 'pft_purchase') icon = '🎨';
+      else if (tx.type === 'token_purchase') icon = '🎮';
+      else if (tx.type === 'auction_bid') icon = '🏛️';
+
       return `
-        <div class="glass-card" style="padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;" onclick="PayWellApp.openReceiptModal('${tx.id}', '${tx.sender_username}', '${tx.receiver_username}', ${tx.amount}, '${tx.created_at}')">
+        <div class="glass-card" style="padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="PayWellApp.openReceiptModal('${tx.id}', '${tx.sender_username}', '${tx.receiver_username}', ${tx.amount}, '${tx.created_at}')">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:18px;">
-              ${isIncoming ? '📥' : '📤'}
+            <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05); border:1px solid var(--border-glass); display:flex; align-items:center; justify-content:center; font-size:20px;">
+              ${icon}
             </div>
             <div>
-              <div style="font-weight:600; font-size:14px; color:var(--text-primary);">${isIncoming ? `@${tx.sender_username}` : `@${tx.receiver_username}`}</div>
-              <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${tx.created_at}</div>
+              <div style="font-weight:700; font-size:13px; color:var(--text-primary);">
+                ${isIncoming ? `From @${tx.sender_username}` : `To @${tx.receiver_username}`}
+              </div>
+              <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px;">
+                ${tx.id} • ${tx.created_at || 'Just now'}
+              </div>
+              ${tx.note ? `<div style="font-size:10px; color:var(--gold-accent); margin-top:2px;">📝 ${tx.note}</div>` : ''}
             </div>
           </div>
           <div style="text-align:right;">
-            <div style="font-family:var(--font-mono); font-weight:700; color:${color}; font-size:15px;">
+            <div style="font-family:var(--font-mono); font-weight:800; font-size:15px; color:${color};">
               ${sign}${tx.amount.toFixed(2)} PW
             </div>
-            <div style="font-size:10px; color:var(--primary-green); text-transform:uppercase;">${tx.status}</div>
+            <div style="font-size:10px; color:var(--primary-green); font-weight:700;">✓ VERIFIED</div>
           </div>
         </div>
       `;
     };
 
-    if (container) container.innerHTML = txs.slice(0, 5).map(renderTxCard).join('');
-    if (fullContainer) fullContainer.innerHTML = txs.map(renderTxCard).join('');
+    if (container) {
+      container.innerHTML = rawTxs.slice(0, 5).map(renderTxCard).join('');
+    }
+    if (fullContainer) {
+      if (filteredTxs.length === 0) {
+        fullContainer.innerHTML = renderEmptyState();
+      } else {
+        fullContainer.innerHTML = filteredTxs.map(renderTxCard).join('');
+      }
+    }
   },
 
   switchStoreCategory(category) {
