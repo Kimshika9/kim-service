@@ -8,8 +8,9 @@
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- QRCode Library -->
+  <!-- QRCode Library & jsQR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/main.css">
@@ -51,16 +52,42 @@
           </div>
 
           <!-- Quick Actions Grid -->
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-top:20px;">
-            <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:10px;">
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:20px;">
+            <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:8px 2px; font-size:11px;">
               <span>📤</span> <span data-i18n="send">Send</span>
             </button>
-            <button onclick="PayWellRouter.openModal('modal-receive')" class="btn btn-glass" style="padding:10px;">
+            <button onclick="PayWellRouter.openModal('modal-receive')" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
               <span>📥</span> <span data-i18n="receive">Receive</span>
             </button>
-            <button onclick="PayWellRouter.openModal('modal-qr')" class="btn btn-glass" style="padding:10px;">
-              <span>📷</span> <span data-i18n="qrScan">Scan QR</span>
+            <button onclick="PayWellApp.exportQR()" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
+              <span>✨</span> <span data-i18n="exportQR">Export QR</span>
             </button>
+            <button onclick="document.getElementById('qr-file-input').click()" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
+              <span>🖼️</span> <span data-i18n="importQR">Import QR</span>
+            </button>
+          </div>
+          <input type="file" id="qr-file-input" accept="image/*" style="display:none;" onchange="PayWellApp.handleQRFileUpload(event)">
+        </div>
+
+        <!-- Daily Login Rewards & Quests Section -->
+        <div class="glass-card" style="padding:16px; margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:700; font-size:15px; color:var(--gold-accent);">🎁 Daily Rewards & Quests</div>
+            <div id="daily-streak-badge" style="font-size:11px; font-weight:700; background:rgba(255,215,0,0.15); color:var(--gold-accent); padding:4px 8px; border-radius:12px;">Streak: 0 Days</div>
+          </div>
+
+          <!-- 7-Day Rewards Track -->
+          <div id="daily-days-track" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin-bottom:14px; text-align:center;">
+            <!-- JS populated -->
+          </div>
+
+          <button id="btn-claim-daily" onclick="PayWellApp.claimDailyReward()" class="btn btn-gold" style="width:100%; padding:10px; font-weight:700; font-size:13px; margin-bottom:16px;">
+            🎁 Claim Daily Reward
+          </button>
+
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">📋 Daily Quests</div>
+          <div id="daily-quests-list" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- JS populated -->
           </div>
         </div>
 
@@ -89,7 +116,39 @@
           <div style="font-size:12px; color:var(--text-muted);" data-i18n="storeSubtitle">Purchase exclusive virtual badges, frames & perks</div>
         </div>
 
-        <div id="store-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;"></div>
+        <!-- Store Category Switcher Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:16px; overflow-x:auto;">
+          <button id="store-tab-nexora" onclick="PayWellApp.switchStoreCategory('nexora')" class="btn btn-primary" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎮 NEXORA Passes</button>
+          <button id="store-tab-pft" onclick="PayWellApp.switchStoreCategory('pft')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎨 PFT Fashion</button>
+          <button id="store-tab-auction" onclick="PayWellApp.switchStoreCategory('auction')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🏛️ Auction Market</button>
+          <button id="store-tab-items" onclick="PayWellApp.switchStoreCategory('items')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🏪 Items & Badges</button>
+          <button id="store-tab-inventory" onclick="PayWellApp.switchStoreCategory('inventory')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎒 My Inventory</button>
+        </div>
+
+        <!-- PFT Auction Market Section -->
+        <div id="store-auction-section" style="display:none;">
+          <div id="pft-auctions-grid" style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:16px;"></div>
+        </div>
+
+        <!-- PFT Fashion Shop Section -->
+        <div id="store-pft-section" style="display:none;">
+          <div id="pft-items-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;"></div>
+        </div>
+
+        <!-- NEXORA Tokens Grid -->
+        <div id="store-nexora-section" style="display:block;">
+          <div id="nexora-tokens-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;"></div>
+        </div>
+
+        <!-- General Store Items Grid -->
+        <div id="store-items-section" style="display:none;">
+          <div id="store-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;"></div>
+        </div>
+
+        <!-- User Inventory View -->
+        <div id="store-inventory-section" style="display:none;">
+          <div id="user-inventory-tokens" style="margin-bottom:16px;"></div>
+        </div>
       </section>
 
       <!-- 4. PROFILE & SETTINGS VIEW -->
@@ -146,31 +205,72 @@
           </div>
         </div>
 
-        <!-- Owner Unlocked Control Panel -->
+        <!-- Owner Unlocked Control Panel (Professional Control Center) -->
         <div id="owner-dashboard-content" style="display:none;">
-          <div class="glass-card glass-card-gold" style="padding:20px; margin-bottom:16px;">
+          <!-- System Status Bar -->
+          <div class="glass-card glass-card-gold" style="padding:16px; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h3 style="color:var(--gold-accent);">👑 System Control Center</h3>
-              <span style="font-size:11px; background:rgba(255,215,0,0.2); color:var(--gold-accent); padding:2px 8px; border-radius:10px;">@Yuji_luke</span>
+              <div>
+                <h3 style="color:var(--gold-accent); font-size:16px;">👑 PAYWELL CONTROL CENTER</h3>
+                <div style="font-size:11px; color:var(--text-muted);">Owner Command Deck (@Yuji_luke)</div>
+              </div>
+              <div id="owner-sys-mode-tag" style="font-size:11px; font-weight:700; background:rgba(0,230,118,0.2); color:var(--primary-green); padding:4px 10px; border-radius:12px;">🟢 ONLINE</div>
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center;">
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
-                <div style="font-size:10px; color:var(--text-muted);">Users</div>
-                <div id="owner-stat-users" class="font-mono" style="font-weight:700; color:var(--text-primary);">0</div>
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.15);">
+                <div style="font-size:10px; color:var(--text-muted);">Total Users</div>
+                <div id="owner-stat-users" class="font-mono" style="font-weight:700; color:var(--text-primary); font-size:15px;">0</div>
               </div>
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
-                <div style="font-size:10px; color:var(--text-muted);">Circulation</div>
-                <div id="owner-stat-circ" class="font-mono" style="font-weight:700; color:var(--gold-accent); font-size:11px;">0.00 PW</div>
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.15);">
+                <div style="font-size:10px; color:var(--text-muted);">PW Circulation</div>
+                <div id="owner-stat-circ" class="font-mono" style="font-weight:700; color:var(--gold-accent); font-size:12px;">0.00 PW</div>
               </div>
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
+              <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.15);">
                 <div style="font-size:10px; color:var(--text-muted);">Transactions</div>
-                <div id="owner-stat-txs" class="font-mono" style="font-weight:700; color:var(--primary-green);">0</div>
+                <div id="owner-stat-txs" class="font-mono" style="font-weight:700; color:var(--primary-green); font-size:15px;">0</div>
               </div>
             </div>
           </div>
 
-          <!-- User Management & Currency Tools -->
+          <!-- Mode Controls & Emergency Switches -->
+          <div class="glass-card" style="padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:10px;">🎛️ System Emergency & Operations</div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+              <button onclick="PayWellOwner.setSystemStatus('online')" class="btn btn-primary" style="padding:8px; font-size:11px;">🟢 Resume (Online)</button>
+              <button onclick="PayWellOwner.setSystemStatus('maintenance')" class="btn btn-gold" style="padding:8px; font-size:11px;">🟡 Maintenance</button>
+              <button onclick="PayWellOwner.setSystemStatus('lockdown')" class="btn btn-danger" style="padding:8px; font-size:11px;">🔴 Emergency Stop</button>
+            </div>
+          </div>
+
+          <!-- Parameter Sliders & Rules -->
+          <div class="glass-card" style="padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:12px;">⚙️ Financial Parameter Deck</div>
+
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                <span>Transfer Fee Rate:</span>
+                <span id="label-fee-rate" style="color:var(--primary-green); font-weight:700;">2.0%</span>
+              </div>
+              <input type="range" id="slider-fee-rate" min="0" max="10" step="0.5" value="2" style="width:100%;" onchange="PayWellOwner.updateSliders()">
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                <span>Daily Transfer Limit (PW):</span>
+                <span id="label-daily-limit" style="color:var(--gold-accent); font-weight:700;">5,000 PW</span>
+              </div>
+              <input type="range" id="slider-daily-limit" min="1000" max="50000" step="1000" value="5000" style="width:100%;" onchange="PayWellOwner.updateSliders()">
+            </div>
+          </div>
+
+          <!-- NEXORA Token Price Override -->
+          <div class="glass-card" style="padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:12px;">🎟️ NEXORA Token Price Deck</div>
+            <div id="owner-token-prices-list"></div>
+          </div>
+
+          <!-- User List & Balance Management -->
           <div style="margin-bottom:12px; font-weight:700; color:var(--gold-accent);">User List & Balance Management</div>
           <div id="owner-users-list"></div>
         </div>
@@ -345,7 +445,7 @@
       </div>
     </div>
 
-    <!-- RECEIVE MONEY MODAL -->
+    <!-- RECEIVE / EXPORT MONEY MODAL -->
     <div id="modal-receive" class="modal-overlay">
       <div class="modal-content" style="text-align:center;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -356,7 +456,10 @@
         <div id="receipt-qr-canvas" style="display:inline-block; padding:12px; background:#FFF; border-radius:12px; margin:16px 0;"></div>
 
         <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;" data-i18n="scanToPayMsg">Scan this QR code using PayWell to receive tokens instantly.</div>
-        <button onclick="navigator.clipboard.writeText(PayWellAuth.currentUser?.username || ''); alert(window.PayWellI18n.t('usernameCopied'))" class="btn btn-glass" data-i18n="copyUsername">Copy Username</button>
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <button onclick="PayWellApp.downloadQRImage()" class="btn btn-primary" style="padding:8px 10px; font-size:12px;" data-i18n="downloadQR">Download QR</button>
+          <button onclick="PayWellApp.copyPayLink()" class="btn btn-glass" style="padding:8px 10px; font-size:12px;" data-i18n="copyPayLink">Copy PayLink</button>
+        </div>
       </div>
     </div>
 

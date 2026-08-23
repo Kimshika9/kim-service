@@ -37,9 +37,10 @@ def send_welcome(message):
         f"👑 *Welcome to PayWell Mini App!*\n\n"
         f"Hello, *{username}*!\n"
         f"PayWell is your exclusive futuristic digital token payment system.\n\n"
-        f"• Check balance & transaction receipts\n"
-        f"• Instant QR payment transfers\n"
-        f"• Exclusive community store\n\n"
+        f"• Daily Login Rewards & Quests 🎁\n"
+        f"• NEXORA Tournament Passes & PFT Fashion Shop 🎮🎨\n"
+        f"• PFT Auction Market with Live Bidding 🏛️\n"
+        f"• Import & Export QR Payment Transfers 🖼️\n\n"
         f"Click the button below to launch PayWell Web App!"
     )
     bot.send_message(message.chat.id, welcome_txt, parse_mode='Markdown', reply_markup=markup)
@@ -167,15 +168,25 @@ def handle_web_app_data(message):
                 f"Thank you for using PayWell!",
                 parse_mode='Markdown'
             )
-        elif event_type == 'store_purchase':
-            item_name = data.get('item_name', 'Item')
+        elif event_type in ['store_purchase', 'token_purchase', 'pft_purchase']:
+            item_name = data.get('item_name', 'Item/Pass')
             bot.send_message(
                 message.chat.id,
-                f"🛍️ *Store Purchase Receipt*\n\n"
+                f"🛍️ *PayWell Store Purchase Receipt*\n\n"
                 f"Item: *{item_name}*\n"
                 f"Paid: *{amount:,.2f} PW*\n"
                 f"Receipt ID: `{tx_id}`\n\n"
-                f"Item added to your account inventory!",
+                f"Item/Pass added to your account inventory!",
+                parse_mode='Markdown'
+            )
+        elif event_type == 'auction_bid':
+            bot.send_message(
+                message.chat.id,
+                f"🏛️ *Auction Bid Placed!*\n\n"
+                f"Item: *{data.get('title', 'PFT Item')}*\n"
+                f"Bid Amount: *{amount:,.2f} PW*\n"
+                f"Receipt ID: `{tx_id}`\n\n"
+                f"Funds held in escrow. Good luck!",
                 parse_mode='Markdown'
             )
     except Exception as e:

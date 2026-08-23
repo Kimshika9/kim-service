@@ -73,7 +73,84 @@ const PayWellOwner = {
     document.getElementById('owner-stat-circ').innerText = `${totalCirc.toLocaleString('en-US', {minimumFractionDigits: 2})} PW`;
     document.getElementById('owner-stat-txs').innerText = (JSON.parse(localStorage.getItem(window.PayWellDB.STORAGE_TXS)) || []).length;
 
+    const sys = window.PayWellDB.getSystemSettings();
+    const tag = document.getElementById('owner-sys-mode-tag');
+    if (tag) {
+      if (sys.status === 'online') {
+        tag.innerText = "🟢 ONLINE";
+        tag.style.background = "rgba(0,230,118,0.2)";
+        tag.style.color = "var(--primary-green)";
+      } else if (sys.status === 'maintenance') {
+        tag.innerText = "🟡 MAINTENANCE";
+        tag.style.background = "rgba(255,143,0,0.2)";
+        tag.style.color = "#FF8F00";
+      } else {
+        tag.innerText = "🔴 LOCKDOWN";
+        tag.style.background = "rgba(255,82,82,0.2)";
+        tag.style.color = "var(--red-alert)";
+      }
+    }
+
+    const sliderFee = document.getElementById('slider-fee-rate');
+    const labelFee = document.getElementById('label-fee-rate');
+    if (sliderFee && labelFee) {
+      sliderFee.value = sys.transferFeeRate || 2;
+      labelFee.innerText = `${sys.transferFeeRate || 2}%`;
+    }
+
+    const sliderLimit = document.getElementById('slider-daily-limit');
+    const labelLimit = document.getElementById('label-daily-limit');
+    if (sliderLimit && labelLimit) {
+      sliderLimit.value = sys.dailyLimit || 5000;
+      labelLimit.innerText = `${(sys.dailyLimit || 5000).toLocaleString()} PW`;
+    }
+
+    this.loadNexoraPriceDeck();
     this.loadUsersList();
+  },
+
+  setSystemStatus(status) {
+    window.PayWellDB.updateSystemSettings({ status });
+    alert(`System status changed to: ${status.toUpperCase()}`);
+    this.loadOwnerDashboardData();
+  },
+
+  updateSliders() {
+    const fee = parseFloat(document.getElementById('slider-fee-rate').value || 2);
+    const limit = parseFloat(document.getElementById('slider-daily-limit').value || 5000);
+
+    document.getElementById('label-fee-rate').innerText = `${fee}%`;
+    document.getElementById('label-daily-limit').innerText = `${limit.toLocaleString()} PW`;
+
+    window.PayWellDB.updateSystemSettings({
+      transferFeeRate: fee,
+      dailyLimit: limit
+    });
+  },
+
+  loadNexoraPriceDeck() {
+    const tokens = window.PayWellDB.getNexoraTokens();
+    const container = document.getElementById('owner-token-prices-list');
+    if (!container) return;
+
+    container.innerHTML = tokens.map(t => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:8px; margin-bottom:8px;">
+        <span style="font-size:12px; color:var(--text-primary); font-weight:600;">${t.icon} ${t.name}</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="number" id="price-input-${t.id}" value="${t.price}" style="width:90px; padding:4px 8px; font-size:12px;" class="glow-input">
+          <button onclick="PayWellOwner.saveTokenPrice('${t.id}')" class="btn btn-gold" style="padding:4px 8px; font-size:11px;">Save</button>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  saveTokenPrice(tokenId) {
+    const val = parseFloat(document.getElementById(`price-input-${tokenId}`).value || 0);
+    if (val < 0) return;
+    window.PayWellDB.updateNexoraTokenPrice(tokenId, val);
+    alert(`Updated NEXORA token price!`);
+    this.loadOwnerDashboardData();
+    window.PayWellApp.loadNexoraTokens();
   },
 
   loadUsersList() {
