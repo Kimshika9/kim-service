@@ -52,6 +52,13 @@ const PayWellAuth = {
       let user = window.PayWellDB.findUser(username) || window.PayWellDB.findUser(String(tgUser.id));
 
       if (user) {
+        try {
+          window.PayWellDB.checkAccountLockout(user.username);
+        } catch (lockErr) {
+          alert(lockErr.message);
+          return;
+        }
+
         // If account exists, require password or 2FA PIN verification to prevent unauthorized takeover
         const pinOrPwd = prompt(`Security Auth Required for @${user.username}:\nEnter your Account Password or 6-Digit 2FA PIN:`);
         if (!pinOrPwd) return;
@@ -60,9 +67,11 @@ const PayWellAuth = {
           this.setUser(verifiedUser);
         } catch (err) {
           if (window.PayWellDB.verifyUserPin(user.username, pinOrPwd)) {
+            window.PayWellDB.resetFailedLoginAttempts(user.username);
             this.setUser(user);
           } else {
-            alert("Security Verification Failed: Incorrect Password or 2FA PIN!");
+            window.PayWellDB.recordFailedLoginAttempt(user.username);
+            alert(`Security Verification Failed: ${err.message}`);
             return;
           }
         }

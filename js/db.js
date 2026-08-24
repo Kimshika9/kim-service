@@ -7,6 +7,49 @@ const PayWellDB = {
   STORAGE_TXS: 'paywell_db_transactions',
   STORAGE_STORE: 'paywell_db_store',
 
+  // DOUBLE-ENTRY LEDGER & AUDIT ENGINE
+  auditUserBalance(username) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return { valid: true };
+
+    const txs = JSON.parse(localStorage.getItem(this.STORAGE_TXS)) || [];
+
+    // Calculate verified mathematical ledger sum
+    let calculatedBalance = 0;
+
+    // Account initial grant for owner
+    if (user.role === 'owner' || user.username === 'Yuji_luke') {
+      calculatedBalance += 100000.0;
+    }
+
+    txs.forEach(t => {
+      const amt = parseFloat(t.amount || 0);
+      const isSender = t.sender_username.toLowerCase() === username.toLowerCase();
+      const isReceiver = t.receiver_username.toLowerCase() === username.toLowerCase();
+
+      if (isReceiver) {
+        calculatedBalance += amt;
+      }
+      if (isSender) {
+        const fee = parseFloat(t.fee || 0);
+        calculatedBalance -= (amt + fee);
+      }
+    });
+
+    // Check consistency
+    const diff = Math.abs(user.balance - calculatedBalance);
+    const isValid = diff < 0.01;
+
+    if (!isValid) {
+      console.warn(`⚠️ Balance inconsistency detected for @${username}! Stored: ${user.balance}, Verified Ledger: ${calculatedBalance}`);
+      user.balance = Math.max(0, calculatedBalance);
+      this.saveUsers(users);
+    }
+
+    return { valid: isValid, verifiedBalance: user.balance, ledgerTotal: calculatedBalance };
+  },
+
   init() {
     // Seed initial users if empty
     let users = this.getUsers();
@@ -111,18 +154,76 @@ const PayWellDB = {
     return newUser;
   },
 
+  // RATE-LIMITING & ACCOUNT LOCKOUT ENGINE
+  checkAccountLockout(username) {
+    const user = this.findUser(username);
+    if (!user) return false;
+
+    if (user.locked_until) {
+      const now = Date.now();
+      const lockTime = new Date(user.locked_until).getTime();
+      if (now < lockTime) {
+        const remainingMins = Math.ceil((lockTime - now) / (1000 * 60));
+        throw new Error(`🔒 Account is temporarily locked due to 10 failed attempts! Try again in ${remainingMins} minute(s).`);
+      } else {
+        // Lock expired
+        user.locked_until = null;
+        user.failed_login_attempts = 0;
+        this.saveUsers(this.getUsers());
+      }
+    }
+    return false;
+  },
+
+  recordFailedLoginAttempt(username) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return;
+
+    user.failed_login_attempts = (user.failed_login_attempts || 0) + 1;
+    if (user.failed_login_attempts >= 10) {
+      // Lock for 15 minutes
+      user.locked_until = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    }
+    this.saveUsers(users);
+  },
+
+  resetFailedLoginAttempts(username) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (user) {
+      user.failed_login_attempts = 0;
+      user.locked_until = null;
+      this.saveUsers(users);
+    }
+  },
+
   loginUser(identifier, password) {
     const user = this.findUser(identifier);
     if (!user) {
       throw new Error("Account not found. Please register a new account!");
     }
-    const pwdHash = this.hash(password);
-    if (user.password_hash && user.password_hash !== pwdHash) {
-      throw new Error("Invalid username or password");
-    }
+
     if (user.status === 'frozen') {
       throw new Error("Account is frozen. Please contact support @Yuji_luke");
     }
+
+    // Check rate limit lockout
+    this.checkAccountLockout(user.username);
+
+    const pwdHash = this.hash(password);
+    if (user.password_hash && user.password_hash !== pwdHash) {
+      this.recordFailedLoginAttempt(user.username);
+      const attempts = (user.failed_login_attempts || 0) + 1;
+      const left = 10 - attempts;
+      if (left > 0) {
+        throw new Error(`Invalid password! ${left} attempt(s) remaining before 15-minute account lockout.`);
+      } else {
+        throw new Error(`🔒 Account locked for 15 minutes due to 10 failed login attempts.`);
+      }
+    }
+
+    this.resetFailedLoginAttempts(user.username);
     return user;
   },
 
@@ -184,6 +285,26 @@ const PayWellDB = {
         trustedSince: now.toISOString()
       });
     }
+
+    this.saveUsers(users);
+    return user.devices;
+  },
+
+  removeAllOtherDevices(username, currentDevId, securityPin) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User account not found");
+
+    if (!this.canDeviceManagePermissions(username, currentDevId)) {
+      throw new Error("⛔ Permission Denied: Only Master devices or secondary devices active for 15+ days can terminate all sessions.");
+    }
+
+    if (!this.verifyUserPin(username, securityPin)) {
+      throw new Error("⛔ Security Verification Failed: Invalid 6-Digit PIN Code!");
+    }
+
+    if (!user.devices) user.devices = [];
+    user.devices = user.devices.filter(d => d.id === currentDevId);
 
     this.saveUsers(users);
     return user.devices;
@@ -292,7 +413,58 @@ const PayWellDB = {
     return updated;
   },
 
-  transfer(senderName, receiverName, amount, note = '') {
+  // TRANSFER SECURITY & PIN RATE-LIMIT ENGINE
+  checkTransferLockout(username) {
+    const user = this.findUser(username);
+    if (!user) return;
+
+    if (user.transfer_locked_until) {
+      const now = Date.now();
+      const lockTime = new Date(user.transfer_locked_until).getTime();
+      if (now < lockTime) {
+        const remainingMins = Math.ceil((lockTime - now) / (1000 * 60));
+        throw new Error(`🛑 Transfers are locked due to 6 failed PIN attempts! Try again in ${remainingMins} minute(s).`);
+      } else {
+        user.transfer_locked_until = null;
+        user.failed_transfer_pin_attempts = 0;
+        this.saveUsers(this.getUsers());
+      }
+    }
+  },
+
+  verifyTransferPin(username, pin) {
+    this.checkTransferLockout(username);
+
+    const isValid = this.verifyUserPin(username, pin);
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User not found");
+
+    if (!isValid) {
+      user.failed_transfer_pin_attempts = (user.failed_transfer_pin_attempts || 0) + 1;
+      const attempts = user.failed_transfer_pin_attempts;
+
+      if (attempts >= 6) {
+        user.transfer_locked_until = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+        this.saveUsers(users);
+        throw new Error("🚨 SECURITY ALERT: 6 Failed PIN attempts! Transfer feature locked for 10 minutes.");
+      } else if (attempts >= 3) {
+        this.saveUsers(users);
+        throw new Error(`⚠️ YELLOW SECURITY ALERT: 3 Failed Transfer PIN attempts! (${6 - attempts} attempts left before 10-minute transfer lockout).`);
+      } else {
+        this.saveUsers(users);
+        throw new Error(`Incorrect 6-Digit PIN! (${6 - attempts} attempt(s) remaining).`);
+      }
+    }
+
+    // Reset attempts on success
+    user.failed_transfer_pin_attempts = 0;
+    user.transfer_locked_until = null;
+    this.saveUsers(users);
+    return true;
+  },
+
+  transfer(senderName, receiverName, amount, pin, note = '') {
     const sys = this.getSystemSettings();
     if (sys.status === 'maintenance') {
       throw new Error("⚠️ System is currently under maintenance by Owner @Yuji_luke.");
@@ -304,6 +476,9 @@ const PayWellDB = {
     if (amount <= 0) throw new Error("Amount must be greater than 0");
     if (amount > sys.dailyLimit) throw new Error(`Transfer exceeds daily limit of ${sys.dailyLimit} PW`);
     if (senderName.toLowerCase() === receiverName.toLowerCase()) throw new Error("Cannot send to yourself");
+
+    // Verify Transfer PIN
+    this.verifyTransferPin(senderName, pin);
 
     const users = this.getUsers();
     const sender = users.find(u => u.username.toLowerCase() === senderName.toLowerCase());

@@ -487,6 +487,11 @@
           <input type="text" id="send-note" class="form-input" placeholder="What is this payment for?">
         </div>
 
+        <div class="form-group">
+          <label class="form-label" style="color:var(--gold-accent);">🔐 Authorize with 6-Digit PIN</label>
+          <input type="password" id="send-pin" maxlength="6" class="form-input glow-input" placeholder="••••••">
+        </div>
+
         <button onclick="PayWellApp.submitSendMoney()" class="btn btn-primary" style="margin-top:10px;" data-i18n="confirmSend">Confirm & Send</button>
       </div>
     </div>
@@ -582,7 +587,10 @@
 
         <!-- 2. ACTIVE DEVICES TAB -->
         <div id="set-tab-dev" style="display:none;">
-          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:4px;">Logged In Devices & Permissions</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div style="font-weight:700; font-size:13px; color:var(--text-primary);">Logged In Devices & Permissions</div>
+            <button onclick="PayWellApp.logoutAllOtherDevices()" class="btn btn-danger" style="width:auto; padding:4px 8px; font-size:10px;">🔄 Terminate All Other Sessions</button>
+          </div>
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Primary devices can remove session locks immediately. Secondary devices require 15 active days of tenure or 6-Digit PIN confirmation.</div>
 
           <div id="settings-devices-list" style="display:flex; flex-direction:column; gap:10px;">
@@ -590,11 +598,11 @@
           </div>
         </div>
 
-        <!-- 3. VERIFICATION BADGES TAB -->
+        <!-- 3. VERIFICATION BADGES & BACKUP TAB -->
         <div id="set-tab-ver" style="display:none;">
           <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:8px;">Third-Party Identity Verification</div>
 
-          <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
             <div class="glass-card" style="padding:12px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
@@ -615,6 +623,15 @@
               </div>
             </div>
           </div>
+
+          <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:8px;">💾 Personal Credentials Backup & Restore</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Export a personal JSON backup file containing your encrypted account profile info (username, email, PIN hash, Telegram ID) to restore if browser cache is cleared.</div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="PayWellApp.exportPersonalBackup()" class="btn btn-gold" style="font-size:11px;">📥 Download Backup File</button>
+            <button onclick="document.getElementById('backup-file-input').click()" class="btn btn-glass" style="font-size:11px;">📤 Restore Backup</button>
+          </div>
+          <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="PayWellApp.restorePersonalBackup(event)">
         </div>
 
       </div>

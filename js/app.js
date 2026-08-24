@@ -69,6 +69,10 @@ const PayWellApp = {
   fetchUserFreshData() {
     if (!window.PayWellAuth.currentUser) return;
     const uName = window.PayWellAuth.currentUser.username;
+
+    // Audit double-entry ledger on data refresh
+    window.PayWellDB.auditUserBalance(uName);
+
     const fresh = window.PayWellDB.findUser(uName);
     if (fresh) {
       window.PayWellAuth.setUser(fresh);
@@ -176,6 +180,90 @@ const PayWellApp = {
       window.PayWellAuth.setUser(updated);
       this.updateProfileUI();
       alert(`Username successfully updated to @${cleanName}`);
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  exportPersonalBackup() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const backupData = {
+      paywell_version: "2.0",
+      export_date: new Date().toISOString(),
+      profile: {
+        username: user.username,
+        email: user.email,
+        password_hash: user.password_hash,
+        sec_pin_hash: user.sec_pin_hash,
+        telegram_id: user.telegram_id,
+        avatar_url: user.avatar_url
+      }
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `PayWell-Backup-${user.username}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  },
+
+  restorePersonalBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const backup = JSON.parse(e.target.result);
+        if (!backup.profile || !backup.profile.username) {
+          throw new Error("Invalid PayWell backup file format.");
+        }
+
+        let user = window.PayWellDB.findUser(backup.profile.username);
+        if (!user) {
+          user = window.PayWellDB.registerUser(backup.profile.username, backup.profile.email, 'TempRestore123!', backup.profile.telegram_id);
+        }
+
+        user.password_hash = backup.profile.password_hash || user.password_hash;
+        user.sec_pin_hash = backup.profile.sec_pin_hash || user.sec_pin_hash;
+        user.email = backup.profile.email || user.email;
+        user.avatar_url = backup.profile.avatar_url || user.avatar_url;
+
+        window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+        window.PayWellAuth.setUser(user);
+        this.updateProfileUI();
+        alert(`💾 Account backup for @${user.username} successfully restored!`);
+      } catch (err) {
+        alert("Failed to restore backup: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  logoutAllOtherDevices() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    let deviceName = "Unknown Web Browser";
+    if (navigator.userAgent.includes("Android")) deviceName = "Android Mobile (PayWell App)";
+    else if (navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")) deviceName = "iOS Device (PayWell Mini App)";
+    else if (navigator.userAgent.includes("Macintosh")) deviceName = "macOS Workstation";
+    else if (navigator.userAgent.includes("Windows")) deviceName = "Windows PC / Chrome";
+    else if (navigator.userAgent.includes("Linux")) deviceName = "Linux Terminal Deck";
+
+    const currentDevId = `DEV-${window.PayWellDB.hash(deviceName + navigator.userAgent).slice(0, 8)}`;
+
+    const pin = prompt("🔐 GLOBAL SECURITY RESET:\nEnter 6-Digit Security PIN to terminate ALL OTHER active device sessions:");
+    if (!pin) return;
+
+    try {
+      window.PayWellDB.removeAllOtherDevices(user.username, currentDevId, pin);
+      alert("🔄 All other device sessions terminated successfully! This device is now your primary active session.");
+      this.renderSettingsDevices();
     } catch (err) {
       alert(err.message);
     }
@@ -811,10 +899,17 @@ const PayWellApp = {
     const receiver = document.getElementById('send-receiver').value.trim();
     const amount = parseFloat(document.getElementById('send-amount').value || 0);
     const note = document.getElementById('send-note').value.trim();
+    const pin = document.getElementById('send-pin').value.trim();
+
+    if (!pin) {
+      alert("Please enter your 6-Digit Security PIN to authorize transfer.");
+      return;
+    }
 
     try {
-      const res = window.PayWellDB.transfer(user.username, receiver, amount, note);
+      const res = window.PayWellDB.transfer(user.username, receiver, amount, pin, note);
       window.PayWellRouter.closeModal('modal-send');
+      document.getElementById('send-pin').value = '';
       this.fetchUserFreshData();
       this.openReceiptModal(res.tx_id, user.username, receiver, amount, res.timestamp);
 
