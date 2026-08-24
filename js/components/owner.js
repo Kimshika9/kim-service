@@ -106,7 +106,49 @@ const PayWellOwner = {
     }
 
     this.loadNexoraPriceDeck();
+    this.loadExchangeOrders();
     this.loadUsersList();
+  },
+
+  loadExchangeOrders() {
+    const orders = window.PayWellDB.getExchangeOrders();
+    const container = document.getElementById('owner-exchange-orders-list');
+    if (!container) return;
+
+    if (orders.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:12px; color:var(--text-muted); font-size:11px;">No exchange orders recorded yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => `
+      <div class="glass-card" style="padding:12px; border-left:4px solid ${o.type === 'deposit' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div style="font-weight:700; font-size:12px; color:var(--text-primary);">${o.type.toUpperCase()} #${o.orderId}</div>
+          <span style="font-size:10px; font-weight:700; color:${o.status === 'pending' ? 'var(--gold-accent)' : o.status === 'done' ? 'var(--primary-green)' : 'var(--red-alert)'};">${o.status.toUpperCase()}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">
+          User: @${o.username} | Amount: ${o.amountPW} PW | Fee: ${o.feeKS} KS | Total: ${o.totalKS} KS
+        </div>
+        ${o.type === 'deposit' ? `<div style="font-size:10px; color:var(--primary-green); font-family:var(--font-mono);">Kpay TxID: ${o.userKpayTxId}</div>` : `<div style="font-size:10px; color:var(--gold-accent);">Kpay: ${o.userKpayNumber} (${o.userKpayName})</div>`}
+        ${o.status === 'pending' ? `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+            <button onclick="PayWellOwner.processExchangeOrder('${o.orderId}', 'approve')" class="btn btn-primary" style="padding:4px; font-size:10px;">✓ Approve Order</button>
+            <button onclick="PayWellOwner.processExchangeOrder('${o.orderId}', 'reject')" class="btn btn-danger" style="padding:4px; font-size:10px;">✕ Reject Order</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  },
+
+  processExchangeOrder(orderId, action) {
+    try {
+      const order = window.PayWellDB.ownerApproveExchangeOrder(orderId, action);
+      alert(`Order #${orderId} marked as ${order.status.toUpperCase()}!`);
+      this.loadExchangeOrders();
+      this.loadOwnerDashboardData();
+    } catch (err) {
+      alert(err.message);
+    }
   },
 
   setSystemStatus(status) {
@@ -182,6 +224,29 @@ const PayWellOwner = {
   quickAdjustModal(username) {
     document.getElementById('adjust-target-user').value = username;
     window.PayWellRouter.openModal('modal-owner-adjust');
+  },
+
+  submitCreatePet() {
+    const name = document.getElementById('pet-create-name')?.value?.trim();
+    const type = document.getElementById('pet-create-type')?.value;
+    const rarity = document.getElementById('pet-create-rarity')?.value;
+    const skill = document.getElementById('pet-create-skill')?.value;
+    const price = document.getElementById('pet-create-price')?.value;
+    const icon = document.getElementById('pet-create-icon')?.value?.trim();
+    const desc = document.getElementById('pet-create-desc')?.value?.trim();
+
+    if (!name || !price || !icon) {
+      alert("Please fill in all pet generator fields!");
+      return;
+    }
+
+    try {
+      const pet = window.PayWellDB.createCustomPet(name, type, rarity, 'Playful', skill, price, icon, desc);
+      alert(`✨ Custom Pet Created: ${pet.name} (${pet.rarity}) for ${pet.price} PW! Published to Pet Sanctuary.`);
+      document.getElementById('form-create-pet')?.reset();
+    } catch (err) {
+      alert("Failed to create pet: " + err.message);
+    }
   },
 
   submitAdjustCurrency(type) {

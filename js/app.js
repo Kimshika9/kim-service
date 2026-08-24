@@ -124,8 +124,12 @@ const PayWellApp = {
     if (avatarImg) {
       avatarImg.src = user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.username}`;
     }
+    const userIdEl = document.getElementById('profile-user-id');
     if (displayName) {
       displayName.textContent = `@${user.username}`;
+    }
+    if (userIdEl) {
+      userIdEl.textContent = `ID: ${user.user_code || '#00001'}`;
     }
     if (roleBadge) {
       roleBadge.textContent = user.role === 'owner' ? '👑 SYSTEM OWNER' : 'VERIFIED COMMUNITY MEMBER';
@@ -165,6 +169,255 @@ const PayWellApp = {
       }
     };
     reader.readAsDataURL(file);
+  },
+
+  openExchangeModal() {
+    this.switchExchangeTab('dep');
+    window.PayWellRouter.openModal('modal-exchange');
+  },
+
+  switchExchangeTab(tab) {
+    const depBtn = document.getElementById('ex-tab-btn-dep');
+    const withBtn = document.getElementById('ex-tab-btn-with');
+    const ordersBtn = document.getElementById('ex-tab-btn-orders');
+
+    const depTab = document.getElementById('ex-tab-dep');
+    const withTab = document.getElementById('ex-tab-with');
+    const ordersTab = document.getElementById('ex-tab-orders');
+
+    depBtn?.classList.remove('btn-primary'); depBtn?.classList.add('btn-glass');
+    withBtn?.classList.remove('btn-primary'); withBtn?.classList.add('btn-glass');
+    ordersBtn?.classList.remove('btn-primary'); ordersBtn?.classList.add('btn-glass');
+
+    if (depTab) depTab.style.display = 'none';
+    if (withTab) withTab.style.display = 'none';
+    if (ordersTab) ordersTab.style.display = 'none';
+
+    if (tab === 'dep') {
+      depBtn?.classList.add('btn-primary'); depBtn?.classList.remove('btn-glass');
+      if (depTab) depTab.style.display = 'block';
+    } else if (tab === 'with') {
+      withBtn?.classList.add('btn-primary'); withBtn?.classList.remove('btn-glass');
+      if (withTab) withTab.style.display = 'block';
+    } else if (tab === 'orders') {
+      ordersBtn?.classList.add('btn-primary'); ordersBtn?.classList.remove('btn-glass');
+      if (ordersTab) ordersTab.style.display = 'block';
+      this.renderUserExchangeOrders();
+    }
+  },
+
+  calcExchangeDepositFee() {
+    const amt = parseFloat(document.getElementById('ex-dep-amount')?.value || 0);
+    const box = document.getElementById('ex-dep-fee-box');
+    const feeVal = document.getElementById('ex-dep-fee-val');
+    const totalVal = document.getElementById('ex-dep-total-val');
+
+    if (amt > 0) {
+      if (box) box.style.display = 'block';
+      const randomFee = 289; // Preview fee
+      if (feeVal) feeVal.textContent = `+${randomFee} KS (Random Fee)`;
+      if (totalVal) totalVal.textContent = `${(amt + randomFee).toLocaleString()} KS`;
+    } else {
+      if (box) box.style.display = 'none';
+    }
+  },
+
+  submitExchangeDeposit() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const amt = parseFloat(document.getElementById('ex-dep-amount')?.value || 0);
+    const txid = document.getElementById('ex-dep-txid')?.value?.trim();
+
+    if (!amt || !txid) {
+      alert("Please enter amount and Kpay transaction ID.");
+      return;
+    }
+
+    try {
+      const order = window.PayWellDB.submitDepositOrder(user.username, amt, txid, null, '');
+      alert(`📥 Deposit Order Submitted!\nOrder ID: #${order.orderId}\nPlease wait for Owner @Yuji_luke verification.`);
+      document.getElementById('form-exchange-deposit')?.reset();
+      this.switchExchangeTab('orders');
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  submitExchangeWithdrawal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const amt = parseFloat(document.getElementById('ex-with-amount')?.value || 0);
+    const num = document.getElementById('ex-with-kpaynum')?.value?.trim();
+    const name = document.getElementById('ex-with-kpayname')?.value?.trim();
+
+    if (!amt || !num || !name) {
+      alert("Please enter amount, Kpay number, and Kpay account name.");
+      return;
+    }
+
+    try {
+      const res = window.PayWellDB.submitWithdrawalOrder(user.username, amt, num, name);
+      alert(`📤 Withdrawal Order Submitted!\nOrder ID: #${res.newOrder.orderId}\nOwner @Yuji_luke will send ${res.newOrder.totalKS} KS to ${num} (${name}).`);
+      document.getElementById('form-exchange-withdraw')?.reset();
+      this.fetchUserFreshData();
+      this.switchExchangeTab('orders');
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  renderUserExchangeOrders() {
+    const user = window.PayWellAuth.currentUser;
+    const container = document.getElementById('exchange-user-orders-list');
+    if (!container || !user) return;
+
+    const allOrders = window.PayWellDB.getExchangeOrders();
+    const userOrders = allOrders.filter(o => o.username.toLowerCase() === user.username.toLowerCase());
+
+    if (userOrders.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted);">No exchange orders submitted yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = userOrders.map(o => `
+      <div class="glass-card" style="padding:12px; border-left:4px solid ${o.type === 'deposit' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div style="font-weight:700; font-size:12px; color:var(--text-primary);">${o.type === 'deposit' ? '📥 DEPOSIT' : '📤 WITHDRAWAL'} #${o.orderId}</div>
+          <span style="font-size:10px; font-weight:700; color:${o.status === 'pending' ? 'var(--gold-accent)' : o.status === 'done' ? 'var(--primary-green)' : 'var(--red-alert)'};">${o.status.toUpperCase()}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">
+          Amount: ${o.amountPW} PW | Fee: ${o.feeKS} KS | Total: ${o.totalKS} KS
+        </div>
+        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Date: ${o.created_at}</div>
+      </div>
+    `).join('');
+  },
+
+  openSavingsModal() {
+    this.renderSavingsUI();
+    window.PayWellRouter.openModal('modal-savings');
+  },
+
+  renderSavingsUI() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const savings = window.PayWellDB.getUserSavings(user.username);
+    const basicBal = savings.basic.balance || 0;
+    const fixedBal = savings.fixed.balance || 0;
+    const premBal = savings.premium.balance || 0;
+    const total = basicBal + fixedBal + premBal;
+
+    const totalEl = document.getElementById('savings-total-val');
+    const basicEl = document.getElementById('save-bal-basic');
+    const fixedEl = document.getElementById('save-bal-fixed');
+    const premEl = document.getElementById('save-bal-premium');
+
+    if (totalEl) totalEl.textContent = `${total.toFixed(2)} PW`;
+    if (basicEl) basicEl.textContent = `${basicBal.toFixed(2)} PW`;
+    if (fixedEl) fixedEl.textContent = `${fixedBal.toFixed(2)} PW`;
+    if (premEl) premEl.textContent = `${premBal.toFixed(2)} PW`;
+  },
+
+  promptSavingsAction(planType, action) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const verb = action === 'deposit' ? 'Deposit into' : 'Withdraw from';
+    const amountStr = prompt(`Enter PW amount to ${verb} ${planType.toUpperCase()} Savings Vault:`);
+    if (!amountStr) return;
+
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Invalid PW amount.");
+      return;
+    }
+
+    try {
+      if (action === 'deposit') {
+        const res = window.PayWellDB.depositSavings(user.username, planType, amount);
+        alert(`💰 Deposited ${amount.toFixed(2)} PW into ${planType.toUpperCase()} Savings Vault!`);
+      } else {
+        const res = window.PayWellDB.withdrawSavings(user.username, planType, amount);
+        alert(`💰 Withdrew ${res.netWithdraw.toFixed(2)} PW from ${planType.toUpperCase()} Savings Vault!${res.fee > 0 ? ` (Early Fee: ${res.fee.toFixed(2)} PW)` : ''}`);
+      }
+      this.fetchUserFreshData();
+      this.renderSavingsUI();
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  openCustomizationModal() {
+    this.loadCustomizationCatalog();
+    window.PayWellRouter.openModal('modal-customization');
+  },
+
+  loadCustomizationCatalog() {
+    const catalog = window.PayWellDB.getCustomizationCatalog();
+    const container = document.getElementById('cust-catalog-grid');
+    if (!container) return;
+
+    container.innerHTML = catalog.map(item => `
+      <div class="glass-card" style="padding:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="font-size:32px;">${item.icon}</div>
+          <div>
+            <div style="font-weight:700; font-size:13px; color:var(--text-primary);">${item.name}</div>
+            <div style="font-size:10px; color:var(--gold-accent); font-weight:700;">${item.rarity} • ${item.category.toUpperCase()}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--font-mono); font-weight:800; font-size:13px; color:var(--primary-green); margin-bottom:4px;">${item.price.toLocaleString()} PW</div>
+          <button onclick="PayWellApp.buyCustomization('${item.id}')" class="btn btn-primary" style="padding:6px 10px; font-size:11px;">Buy & Equip</button>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  buyCustomization(itemId) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    try {
+      const res = window.PayWellDB.buyCustomizationItem(user.username, itemId);
+      alert(`🎉 Purchased ${res.item.name}! Applied to your profile.`);
+      this.fetchUserFreshData();
+      window.PayWellRouter.closeModal('modal-customization');
+    } catch (err) {
+      alert(err.message);
+    }
+  },
+
+  openIDCardModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const avatar = document.getElementById('idcard-avatar');
+    const username = document.getElementById('idcard-username');
+    const usercode = document.getElementById('idcard-usercode');
+    const joined = document.getElementById('idcard-joined');
+    const qrCanvas = document.getElementById('idcard-qr-canvas');
+
+    if (avatar) avatar.src = user.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.username}`;
+    if (username) username.textContent = `@${user.username}`;
+    if (usercode) usercode.textContent = `ID: ${user.user_code || '#00001'}`;
+    if (joined) joined.textContent = `Member Since: ${user.created_at || '2026'}`;
+
+    if (qrCanvas && window.QRCode) {
+      qrCanvas.innerHTML = "";
+      new window.QRCode(qrCanvas, {
+        text: `paywell:${user.user_code || user.username}`,
+        width: 120,
+        height: 120,
+        colorDark: "#0A0A0F",
+        colorLight: "#FFFFFF"
+      });
+    }
+
+    window.PayWellRouter.openModal('modal-idcard');
   },
 
   openEditProfileModal() {
@@ -615,18 +868,21 @@ const PayWellApp = {
   },
 
   switchStoreCategory(category) {
+    const secPets = document.getElementById('store-pets-section');
     const secNexora = document.getElementById('store-nexora-section');
     const secPft = document.getElementById('store-pft-section');
     const secAuc = document.getElementById('store-auction-section');
     const secItems = document.getElementById('store-items-section');
     const secInv = document.getElementById('store-inventory-section');
 
+    const tabPets = document.getElementById('store-tab-pets');
     const tabNexora = document.getElementById('store-tab-nexora');
     const tabPft = document.getElementById('store-tab-pft');
     const tabAuc = document.getElementById('store-tab-auction');
     const tabItems = document.getElementById('store-tab-items');
     const tabInv = document.getElementById('store-tab-inventory');
 
+    if (secPets) secPets.style.display = category === 'pets' ? 'block' : 'none';
     if (secNexora) secNexora.style.display = category === 'nexora' ? 'block' : 'none';
     if (secPft) secPft.style.display = category === 'pft' ? 'block' : 'none';
     if (secAuc) secAuc.style.display = category === 'auction' ? 'block' : 'none';

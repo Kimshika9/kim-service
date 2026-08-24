@@ -407,3 +407,34 @@
   box-shadow: 0 0 10px var(--gold-glow);
   transform: scale(1.1);
 }
+
+/* PROFILE CUSTOMIZATION STYLES */
+.cust-bg-galaxy {
+  background: radial-gradient(circle at center, #1A0B2E 0%, #0A0A0F 100%) !important;
+  border: 1px solid var(--purple-accent) !important;
+}
+
+.cust-bg-cyberpunk {
+  background: linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #1A0033 100%) !important;
+  border: 1px solid var(--secondary-blue) !important;
+}
+
+.cust-frame-gold {
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+  border: 3px solid var(--gold-accent) !important;
+}
+
+.cust-name-rainbow {
+  background: linear-gradient(90deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cust-aura-gold {
+  animation: pulseGold 2s infinite alternate;
+}
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+  100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); }
+}

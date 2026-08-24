@@ -52,18 +52,24 @@
           </div>
 
           <!-- Quick Actions Grid -->
-          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:20px;">
-            <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:8px 2px; font-size:11px;">
+        <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:4px; margin-top:20px;">
+          <button onclick="PayWellRouter.openModal('modal-send')" class="btn btn-primary" style="padding:8px 2px; font-size:9px;">
               <span>📤</span> <span data-i18n="send">Send</span>
             </button>
-            <button onclick="PayWellRouter.openModal('modal-receive')" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
+          <button onclick="PayWellRouter.openModal('modal-receive')" class="btn btn-glass" style="padding:8px 2px; font-size:9px;">
               <span>📥</span> <span data-i18n="receive">Receive</span>
             </button>
-            <button onclick="PayWellApp.exportQR()" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
-              <span>✨</span> <span data-i18n="exportQR">Export QR</span>
+          <button onclick="PayWellApp.openExchangeModal()" class="btn btn-primary" style="padding:8px 2px; font-size:9px;">
+            <span>💱</span> <span>Exchange</span>
+          </button>
+          <button onclick="PayWellApp.openSavingsModal()" class="btn btn-gold" style="padding:8px 2px; font-size:9px;">
+            <span>💰</span> <span>Savings</span>
+          </button>
+          <button onclick="PayWellApp.exportQR()" class="btn btn-glass" style="padding:8px 2px; font-size:9px;">
+            <span>✨</span> <span data-i18n="exportQR">Export</span>
             </button>
-            <button onclick="document.getElementById('qr-file-input').click()" class="btn btn-glass" style="padding:8px 2px; font-size:11px;">
-              <span>🖼️</span> <span data-i18n="importQR">Import QR</span>
+          <button onclick="document.getElementById('qr-file-input').click()" class="btn btn-glass" style="padding:8px 2px; font-size:9px;">
+            <span>🖼️</span> <span data-i18n="importQR">Import</span>
             </button>
           </div>
           <input type="file" id="qr-file-input" accept="image/*" style="display:none;" onchange="PayWellApp.handleQRFileUpload(event)">
@@ -131,11 +137,21 @@
 
         <!-- Store Category Switcher Tabs -->
         <div style="display:flex; gap:6px; margin-bottom:16px; overflow-x:auto;">
-          <button id="store-tab-nexora" onclick="PayWellApp.switchStoreCategory('nexora')" class="btn btn-primary" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎮 NEXORA Passes</button>
+          <button id="store-tab-pets" onclick="PayWellApp.switchStoreCategory('pets')" class="btn btn-primary" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🐾 Pet Sanctuary</button>
+          <button id="store-tab-nexora" onclick="PayWellApp.switchStoreCategory('nexora')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎮 NEXORA Passes</button>
           <button id="store-tab-pft" onclick="PayWellApp.switchStoreCategory('pft')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎨 PFT Fashion</button>
           <button id="store-tab-auction" onclick="PayWellApp.switchStoreCategory('auction')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🏛️ Auction Market</button>
           <button id="store-tab-items" onclick="PayWellApp.switchStoreCategory('items')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🏪 Items & Badges</button>
           <button id="store-tab-inventory" onclick="PayWellApp.switchStoreCategory('inventory')" class="btn btn-glass" style="padding:8px 10px; font-size:11px; white-space:nowrap;">🎒 My Inventory</button>
+        </div>
+
+        <!-- Pet System Section -->
+        <div id="store-pets-section" style="display:block;">
+          <div id="my-pet-dashboard" class="glass-card glass-card-green" style="padding:16px; margin-bottom:16px; display:none;">
+            <!-- Active Pet UI rendered by JS -->
+          </div>
+          <div style="font-weight:700; font-size:14px; color:var(--text-primary); margin-bottom:10px;">🐾 Adoption Sanctuary & Pet Shop</div>
+          <div id="pets-shop-grid" style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:16px;"></div>
         </div>
 
         <!-- PFT Auction Market Section -->
@@ -180,11 +196,12 @@
           </div>
 
           <h2 id="profile-display-name" class="font-heading" style="font-size:20px; color:var(--text-primary); margin-bottom:2px;">@User</h2>
+          <div id="profile-user-id" class="font-mono" style="font-size:13px; font-weight:700; color:var(--gold-accent); margin-bottom:4px;">ID: #00001</div>
           <div id="profile-role-badge" style="font-size:11px; font-weight:700; color:var(--primary-green); letter-spacing:0.05em;">VERIFIED COMMUNITY MEMBER</div>
 
           <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+            <button onclick="PayWellApp.openIDCardModal()" class="btn btn-gold" style="padding:4px 12px; font-size:11px; width:auto;">🪪 View Digital ID Card</button>
             <span id="badge-email-ver" class="badge" style="background:rgba(0,230,118,0.15); color:var(--primary-green); padding:4px 10px; border-radius:12px; font-size:11px;">✓ Gmail Verified</span>
-            <span id="badge-tg-ver" class="badge" style="background:rgba(0,180,216,0.15); color:var(--secondary-blue); padding:4px 10px; border-radius:12px; font-size:11px;">✈️ Telegram Linked</span>
           </div>
         </div>
 
@@ -192,6 +209,9 @@
         <div class="glass-card" style="padding:18px; margin-bottom:16px;">
           <div style="font-weight:700; font-size:14px; margin-bottom:12px; color:var(--text-primary);">⚡ Quick Actions</div>
           <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="PayWellApp.openCustomizationModal()" class="btn btn-glass" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>🎨 Profile Customization Shop</span> <span>➔</span>
+            </button>
             <button onclick="PayWellRouter.openModal('modal-settings')" class="btn btn-glass" style="display:flex; justify-content:space-between; align-items:center;">
               <span>🛡️ High Security & Devices Deck</span> <span>➔</span>
             </button>
@@ -314,6 +334,54 @@
           <div class="glass-card" style="padding:16px; margin-bottom:16px;">
             <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:12px;">🎟️ NEXORA Token Price Deck</div>
             <div id="owner-token-prices-list"></div>
+          </div>
+
+          <!-- Owner Exchange Orders Deck -->
+          <div class="glass-card" style="padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:12px;">💱 Kpay Exchange Order Processing Deck</div>
+            <div id="owner-exchange-orders-list" style="display:flex; flex-direction:column; gap:10px;">
+              <!-- JS populated -->
+            </div>
+          </div>
+
+          <!-- Owner Pet Creation Generator Deck -->
+          <div class="glass-card" style="padding:16px; margin-bottom:16px;">
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent); margin-bottom:12px;">🐉 Custom Pet Generator Deck</div>
+            <form id="form-create-pet" onsubmit="event.preventDefault(); PayWellOwner.submitCreatePet();">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                <input type="text" id="pet-create-name" class="form-input glow-input" placeholder="Pet Name (e.g. Pyros)" required>
+                <select id="pet-create-type" class="form-input glow-input">
+                  <option value="Dragon">Dragon 🐉</option>
+                  <option value="Phoenix">Phoenix 🦅</option>
+                  <option value="Unicorn">Unicorn 🦄</option>
+                  <option value="Wolf">Wolf 🐺</option>
+                  <option value="Panda">Panda 🐼</option>
+                  <option value="Lion">Lion 🦁</option>
+                </select>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                <select id="pet-create-rarity" class="form-input glow-input">
+                  <option value="Common">Common</option>
+                  <option value="Uncommon">Uncommon</option>
+                  <option value="Rare">Rare</option>
+                  <option value="Epic">Epic</option>
+                  <option value="Legendary">Legendary</option>
+                  <option value="Mythic">Mythic</option>
+                  <option value="Galaxy">Galaxy</option>
+                </select>
+                <select id="pet-create-skill" class="form-input glow-input">
+                  <option value="Money Finder">Money Finder</option>
+                  <option value="Savings Boost">Savings Boost</option>
+                  <option value="Fee Reduction">Fee Reduction</option>
+                </select>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                <input type="number" id="pet-create-price" class="form-input glow-input" placeholder="Price (PW)" required>
+                <input type="text" id="pet-create-icon" class="form-input glow-input" placeholder="Emoji Icon (e.g. 🐉)" required>
+              </div>
+              <input type="text" id="pet-create-desc" class="form-input glow-input" placeholder="Pet Description..." style="margin-bottom:10px;" required>
+              <button type="submit" class="btn btn-gold" style="font-weight:700;">✨ Generate & Publish Pet</button>
+            </form>
           </div>
 
           <!-- User List & Balance Management -->
@@ -545,6 +613,204 @@
           </div>
 
           <button onclick="PayWellRouter.closeModal('modal-receipt')" class="btn btn-primary" style="margin-top:12px;">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPAY EXCHANGE SYSTEM MODAL -->
+    <div id="modal-exchange" class="modal-overlay">
+      <div class="modal-content glass-card" style="max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 class="font-heading" style="color:var(--primary-green);">💱 Kpay Instant Exchange</h3>
+          <button onclick="PayWellRouter.closeModal('modal-exchange')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <!-- Exchange Tabs -->
+        <div style="display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border-glass); padding-bottom:8px;">
+          <button id="ex-tab-btn-dep" onclick="PayWellApp.switchExchangeTab('dep')" class="btn btn-primary" style="padding:6px 12px; font-size:11px;">📥 Deposit (ငွေသွင်း)</button>
+          <button id="ex-tab-btn-with" onclick="PayWellApp.switchExchangeTab('with')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">📤 Withdraw (ငွေထုတ်)</button>
+          <button id="ex-tab-btn-orders" onclick="PayWellApp.switchExchangeTab('orders')" class="btn btn-glass" style="padding:6px 12px; font-size:11px;">📋 My Orders</button>
+        </div>
+
+        <!-- DEPOSIT TAB -->
+        <div id="ex-tab-dep" style="display:block;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:4px;">1 PW = 1 KS (Myanmar Kyat)</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Transfer total amount to Owner Kpay, then submit transaction ID & screenshot.</div>
+
+          <div style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); padding:12px; border-radius:10px; margin-bottom:14px; text-align:center;">
+            <div style="font-size:10px; color:var(--gold-accent); font-weight:700;">OWNER KPAY PAYMENT DETAILS</div>
+            <div style="font-size:18px; font-weight:800; color:var(--text-primary); margin:4px 0;">09763458034</div>
+            <div style="font-size:12px; font-weight:700; color:var(--primary-green);">Account Name: DMTD</div>
+          </div>
+
+          <form id="form-exchange-deposit" onsubmit="event.preventDefault(); PayWellApp.submitExchangeDeposit();">
+            <div class="form-group">
+              <label class="form-label">PW Amount to Purchase</label>
+              <input type="number" id="ex-dep-amount" class="form-input glow-input" placeholder="e.g. 5000" required oninput="PayWellApp.calcExchangeDepositFee()">
+            </div>
+
+            <div id="ex-dep-fee-box" style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; margin-bottom:12px; font-size:11px; display:none;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Random Service Fee:</span><span id="ex-dep-fee-val" style="color:var(--gold-accent); font-weight:700;">0 KS</span></div>
+              <div style="display:flex; justify-content:space-between; font-weight:800; font-size:13px; color:var(--primary-green);"><span>Total Kpay Amount to Pay:</span><span id="ex-dep-total-val">0 KS</span></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kpay Transaction ID (Req 20, 21...)</label>
+              <input type="text" id="ex-dep-txid" class="form-input glow-input" placeholder="e.g. 20260823101928371" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Upload Kpay Transfer Screenshot</label>
+              <input type="file" id="ex-dep-file" accept="image/*" class="form-input">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:10px;">Confirm & Submit Deposit Order</button>
+          </form>
+        </div>
+
+        <!-- WITHDRAWAL TAB -->
+        <div id="ex-tab-with" style="display:none;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:4px;">PW to Kpay Cash Withdrawal</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">Convert PW tokens to Myanmar Kyat directly to your Kpay account.</div>
+
+          <form id="form-exchange-withdraw" onsubmit="event.preventDefault(); PayWellApp.submitExchangeWithdrawal();">
+            <div class="form-group">
+              <label class="form-label">PW Amount to Withdraw</label>
+              <input type="number" id="ex-with-amount" class="form-input glow-input" placeholder="e.g. 5000" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your Kpay Phone Number</label>
+              <input type="text" id="ex-with-kpaynum" class="form-input glow-input" placeholder="09xxxxxxxxx" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Your Kpay Account Name</label>
+              <input type="text" id="ex-with-kpayname" class="form-input glow-input" placeholder="e.g. Kyaw Kyaw" required>
+            </div>
+
+            <button type="submit" class="btn btn-gold" style="margin-top:10px;">Submit Cash Withdrawal Request</button>
+          </form>
+        </div>
+
+        <!-- ORDERS HISTORY TAB -->
+        <div id="ex-tab-orders" style="display:none;">
+          <div id="exchange-user-orders-list" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- JS populated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SAVINGS VAULT SYSTEM MODAL -->
+    <div id="modal-savings" class="modal-overlay">
+      <div class="modal-content glass-card glass-card-gold" style="max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 class="font-heading" style="color:var(--gold-accent);">💰 PayWell High-Yield Savings Vault</h3>
+          <button onclick="PayWellRouter.closeModal('modal-savings')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="text-align:center; background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; margin-bottom:16px; border:1px solid rgba(255,215,0,0.2);">
+          <div style="font-size:11px; color:var(--text-muted);">TOTAL SAVINGS BALANCE</div>
+          <div id="savings-total-val" class="amount-display" style="font-size:32px; font-weight:800; color:var(--gold-accent);">0.00 PW</div>
+        </div>
+
+        <!-- 3 Savings Plans -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+
+          <!-- Plan 1: Basic Savings -->
+          <div class="glass-card" style="padding:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-weight:700; font-size:14px; color:var(--text-primary);">🌱 Basic Savings</div>
+              <span style="font-size:11px; font-weight:700; color:var(--primary-green);">0.5% Daily Interest</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">No lock period. Deposit or withdraw tokens anytime with zero fees.</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--gold-accent); margin-bottom:10px;">
+              <span>Saved:</span> <span id="save-bal-basic">0.00 PW</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button onclick="PayWellApp.promptSavingsAction('basic', 'deposit')" class="btn btn-primary" style="padding:6px; font-size:11px;">Deposit</button>
+              <button onclick="PayWellApp.promptSavingsAction('basic', 'withdraw')" class="btn btn-glass" style="padding:6px; font-size:11px;">Withdraw</button>
+            </div>
+          </div>
+
+          <!-- Plan 2: Fixed Deposit -->
+          <div class="glass-card" style="padding:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-weight:700; font-size:14px; color:var(--text-primary);">🔒 Fixed Deposit (7 Days)</div>
+              <span style="font-size:11px; font-weight:700; color:var(--secondary-blue);">1.0% Daily Interest</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Min deposit: 1,000 PW. Locked for 7 days. Early withdrawal penalty: 5%.</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--gold-accent); margin-bottom:10px;">
+              <span>Saved:</span> <span id="save-bal-fixed">0.00 PW</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button onclick="PayWellApp.promptSavingsAction('fixed', 'deposit')" class="btn btn-primary" style="padding:6px; font-size:11px;">Deposit</button>
+              <button onclick="PayWellApp.promptSavingsAction('fixed', 'withdraw')" class="btn btn-glass" style="padding:6px; font-size:11px;">Withdraw</button>
+            </div>
+          </div>
+
+          <!-- Plan 3: Premium Savings -->
+          <div class="glass-card" style="padding:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-weight:700; font-size:14px; color:var(--text-primary);">👑 Premium Vault (30 Days)</div>
+              <span style="font-size:11px; font-weight:700; color:var(--gold-accent);">1.5% Daily Interest</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">Min deposit: 5,000 PW. Locked for 30 days. Early withdrawal penalty: 10%.</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--gold-accent); margin-bottom:10px;">
+              <span>Saved:</span> <span id="save-bal-premium">0.00 PW</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button onclick="PayWellApp.promptSavingsAction('premium', 'deposit')" class="btn btn-gold" style="padding:6px; font-size:11px;">Deposit</button>
+              <button onclick="PayWellApp.promptSavingsAction('premium', 'withdraw')" class="btn btn-glass" style="padding:6px; font-size:11px;">Withdraw</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE CUSTOMIZATION SHOP MODAL -->
+    <div id="modal-customization" class="modal-overlay">
+      <div class="modal-content glass-card" style="max-height:85vh; overflow-y:auto; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 class="font-heading" style="color:var(--gold-accent);">🎨 Profile Customization Store</h3>
+          <button onclick="PayWellRouter.closeModal('modal-customization')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Personalize your profile cards with futuristic backgrounds, royal gold frames, rainbow name glows, and celestial aura effects.</div>
+
+        <div id="cust-catalog-grid" style="display:grid; grid-template-columns:1fr; gap:10px;">
+          <!-- JS populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- DIGITAL PAYWELL ID CARD MODAL -->
+    <div id="modal-idcard" class="modal-overlay">
+      <div class="modal-content glass-card glass-card-gold" style="padding:24px; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="font-weight:800; color:var(--gold-accent); font-size:14px; letter-spacing:0.1em;">PAYWELL DIGITAL ID CARD</div>
+          <button onclick="PayWellRouter.closeModal('modal-idcard')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="border:1px solid rgba(255,215,0,0.3); border-radius:16px; padding:20px; background:rgba(18,18,26,0.9); position:relative; overflow:hidden;">
+          <div style="position:absolute; top:-20px; right:-20px; font-size:120px; opacity:0.04; color:var(--gold-accent);">PW</div>
+
+          <div style="display:flex; gap:16px; align-items:center; text-align:left; margin-bottom:16px;">
+            <img id="idcard-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=PayWellUser" style="width:64px; height:64px; border-radius:50%; border:2px solid var(--gold-accent); background:#12121A; object-fit:cover;">
+            <div>
+              <div id="idcard-username" style="font-weight:800; font-size:18px; color:var(--text-primary);">@User</div>
+              <div id="idcard-usercode" class="font-mono" style="font-size:14px; font-weight:800; color:var(--gold-accent);">ID: #00001</div>
+              <div id="idcard-joined" style="font-size:10px; color:var(--text-muted); margin-top:2px;">Member Since: 2026</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; margin-bottom:16px;">
+            <span style="font-size:11px; color:var(--text-muted);">Account Status</span>
+            <span id="idcard-status" style="font-size:11px; font-weight:700; color:var(--primary-green);">🟢 ACTIVE VERIFIED</span>
+          </div>
+
+          <div id="idcard-qr-canvas" style="display:inline-block; padding:8px; background:#FFF; border-radius:12px;"></div>
         </div>
       </div>
     </div>

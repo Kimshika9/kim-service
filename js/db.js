@@ -57,6 +57,7 @@ const PayWellDB = {
       users = [
         {
           id: 1,
+          user_code: '#00001',
           username: 'Yuji_luke',
           email: 'yuji_luke@paywell.app',
           password_hash: this.hash('OwnerPass123!'),
@@ -74,6 +75,17 @@ const PayWellDB = {
         }
       ];
       this.saveUsers(users);
+    } else {
+      // Migrate users missing user_code
+      let changed = false;
+      users.forEach((u, idx) => {
+        if (!u.user_code) {
+          const num = idx + 1;
+          u.user_code = `#${num.toString().padStart(5, '0')}`;
+          changed = true;
+        }
+      });
+      if (changed) this.saveUsers(users);
     }
 
     // Seed initial store items if empty
@@ -112,9 +124,11 @@ const PayWellDB = {
 
   findUser(identifier) {
     const users = this.getUsers();
+    const clean = identifier.trim().toLowerCase();
     return users.find(u =>
-      u.username.toLowerCase() === identifier.toLowerCase() ||
-      (u.email && u.email.toLowerCase() === identifier.toLowerCase()) ||
+      u.username.toLowerCase() === clean ||
+      (u.user_code && u.user_code.toLowerCase() === clean) ||
+      (u.email && u.email.toLowerCase() === clean) ||
       (u.telegram_id && String(u.telegram_id) === String(identifier))
     );
   },
@@ -131,8 +145,12 @@ const PayWellDB = {
     }
 
     const isOwner = (username === 'Yuji_luke' || String(telegram_id) === '6399210935');
+    const nextNum = users.length + 1;
+    const userCode = `#${nextNum.toString().padStart(5, '0')}`;
+
     const newUser = {
       id: Date.now(),
+      user_code: userCode,
       username: username,
       email: email || null,
       password_hash: this.hash(password || 'default123'),
@@ -694,6 +712,497 @@ const PayWellDB = {
     auctions.unshift(newAuction);
     this.saveAuctions(auctions);
     return newAuction;
+  },
+
+  // EXCHANGE SYSTEM ENGINE (KPAY 09763458034 DMTD)
+  KPAY_NUMBER: '09763458034',
+  KPAY_NAME: 'DMTD',
+
+  getExchangeOrders() {
+    return JSON.parse(localStorage.getItem('paywell_exchange_orders')) || [];
+  },
+
+  saveExchangeOrders(orders) {
+    localStorage.setItem('paywell_exchange_orders', JSON.stringify(orders));
+  },
+
+  submitDepositOrder(username, amountPW, kpayTxId, screenshotBase64, note) {
+    if (amountPW <= 0) throw new Error("Amount must be greater than 0");
+    if (!kpayTxId) throw new Error("Please enter your Kpay Transaction ID");
+
+    // Generate random fee range 100 - 999 KS
+    const randomFee = Math.floor(Math.random() * 900) + 100;
+    const totalKyatToPay = amountPW + randomFee;
+
+    const orders = this.getExchangeOrders();
+    const newOrder = {
+      orderId: `ORD-DEP-${Date.now()}`,
+      type: 'deposit',
+      username: username,
+      amountPW: amountPW,
+      feeKS: randomFee,
+      totalKS: totalKyatToPay,
+      kpayNumber: this.KPAY_NUMBER,
+      kpayName: this.KPAY_NAME,
+      userKpayTxId: kpayTxId,
+      screenshot: screenshotBase64 || null,
+      note: note || '',
+      status: 'pending',
+      created_at: new Date().toLocaleString()
+    };
+
+    orders.unshift(newOrder);
+    this.saveExchangeOrders(orders);
+    return newOrder;
+  },
+
+  submitWithdrawalOrder(username, amountPW, userKpayNum, userKpayName) {
+    if (amountPW <= 0) throw new Error("Amount must be greater than 0");
+    if (!userKpayNum || !userKpayName) throw new Error("Please enter your Kpay Number and Name");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.balance < amountPW) throw new Error("Insufficient PW balance for exchange withdrawal");
+
+    // Deduct PW balance immediately on order submission
+    user.balance -= amountPW;
+    this.saveUsers(users);
+
+    const randomFee = Math.floor(Math.random() * 900) + 100;
+    const netKyatToSend = Math.max(0, amountPW - randomFee);
+
+    const orders = this.getExchangeOrders();
+    const newOrder = {
+      orderId: `ORD-WITH-${Date.now()}`,
+      type: 'withdrawal',
+      username: username,
+      amountPW: amountPW,
+      feeKS: randomFee,
+      totalKS: netKyatToSend,
+      userKpayNumber: userKpayNum,
+      userKpayName: userKpayName,
+      status: 'pending',
+      created_at: new Date().toLocaleString()
+    };
+
+    orders.unshift(newOrder);
+    this.saveExchangeOrders(orders);
+    return { newOrder, newBalance: user.balance };
+  },
+
+  ownerApproveExchangeOrder(orderId, action) {
+    const orders = this.getExchangeOrders();
+    const order = orders.find(o => o.orderId === orderId);
+    if (!order) throw new Error("Exchange order not found");
+    if (order.status !== 'pending') throw new Error("Order is already processed");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === order.username.toLowerCase());
+
+    if (action === 'approve') {
+      order.status = 'done';
+      if (order.type === 'deposit') {
+        if (user) user.balance += order.amountPW;
+      }
+      this.saveUsers(users);
+    } else if (action === 'reject') {
+      order.status = 'failed';
+      if (order.type === 'withdrawal') {
+        if (user) user.balance += order.amountPW; // Refund PW if rejected
+      }
+      this.saveUsers(users);
+    }
+
+    this.saveExchangeOrders(orders);
+
+    const tx = {
+      id: `PW-EXCHANGE-${Date.now()}`,
+      sender_username: order.type === 'deposit' ? "Kpay Exchange Deposit" : user.username,
+      receiver_username: order.type === 'deposit' ? user.username : "Kpay Exchange Withdrawal",
+      amount: order.amountPW,
+      fee: order.feeKS,
+      total: order.amountPW,
+      type: `exchange_${order.type}`,
+      note: `Exchange Order ${order.orderId} (${order.status.toUpperCase()})`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return order;
+  },
+
+  // SAVINGS SYSTEM ENGINE
+  getUserSavings(username) {
+    const key = `paywell_savings_${username.toLowerCase()}`;
+    const defaults = {
+      basic: { balance: 0.0, rate: 0.005 },
+      fixed: { balance: 0.0, rate: 0.01, lockedUntil: null },
+      premium: { balance: 0.0, rate: 0.015, lockedUntil: null },
+      lastInterestCalculated: new Date().toISOString().split('T')[0]
+    };
+    return JSON.parse(localStorage.getItem(key)) || defaults;
+  },
+
+  saveUserSavings(username, savings) {
+    const key = `paywell_savings_${username.toLowerCase()}`;
+    localStorage.setItem(key, JSON.stringify(savings));
+  },
+
+  depositSavings(username, planType, amount) {
+    if (amount <= 0) throw new Error("Amount must be greater than 0");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.balance < amount) throw new Error("Insufficient PW balance for savings deposit");
+
+    const savings = this.getUserSavings(username);
+
+    if (planType === 'fixed' && amount < 1000) throw new Error("Fixed Deposit requires a minimum of 1,000 PW");
+    if (planType === 'premium' && amount < 5000) throw new Error("Premium Savings requires a minimum of 5,000 PW");
+
+    user.balance -= amount;
+    savings[planType].balance += amount;
+
+    const now = new Date();
+    if (planType === 'fixed') {
+      savings.fixed.lockedUntil = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (planType === 'premium') {
+      savings.premium.lockedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    this.saveUsers(users);
+    this.saveUserSavings(username, savings);
+
+    const tx = {
+      id: `PW-SAVEDEP-${Date.now()}`,
+      sender_username: user.username,
+      receiver_username: `Savings Vault (${planType.toUpperCase()})`,
+      amount: amount,
+      fee: 0,
+      total: amount,
+      type: 'savings_deposit',
+      note: `Deposited into ${planType} savings`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return { savings, newBalance: user.balance };
+  },
+
+  withdrawSavings(username, planType, amount) {
+    const savings = this.getUserSavings(username);
+    const plan = savings[planType];
+    if (!plan || plan.balance < amount) throw new Error("Insufficient balance in savings vault");
+
+    const now = new Date();
+    let earlyFeePercent = 0;
+
+    if (planType === 'fixed' && plan.lockedUntil) {
+      if (now < new Date(plan.lockedUntil)) earlyFeePercent = 0.05; // 5% early fee
+    } else if (planType === 'premium' && plan.lockedUntil) {
+      if (now < new Date(plan.lockedUntil)) earlyFeePercent = 0.10; // 10% early fee
+    }
+
+    const fee = amount * earlyFeePercent;
+    const netWithdraw = amount - fee;
+
+    plan.balance -= amount;
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    user.balance += netWithdraw;
+
+    this.saveUsers(users);
+    this.saveUserSavings(username, savings);
+
+    const tx = {
+      id: `PW-SAVEWITH-${Date.now()}`,
+      sender_username: `Savings Vault (${planType.toUpperCase()})`,
+      receiver_username: user.username,
+      amount: netWithdraw,
+      fee: fee,
+      total: amount,
+      type: 'savings_withdrawal',
+      note: `Withdrew from ${planType} savings${fee > 0 ? ` (Early Fee: ${fee.toFixed(2)} PW)` : ''}`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return { netWithdraw, fee, newBalance: user.balance };
+  },
+
+  // ADVANCED PET SYSTEM ENGINE
+  getPetsCatalog() {
+    const defaultPets = [
+      {
+        id: 'pet_ember_dragon',
+        name: 'Ember Dragon',
+        type: 'Dragon',
+        rarity: 'Legendary',
+        personality: 'Brave',
+        skill: 'Money Finder',
+        price: 10000.0,
+        icon: '🐉',
+        description: 'A fierce mythical dragon that discovers daily hidden PW tokens!'
+      },
+      {
+        id: 'pet_luna_unicorn',
+        name: 'Luna Unicorn',
+        type: 'Unicorn',
+        rarity: 'Epic',
+        personality: 'Calm',
+        skill: 'Savings Boost',
+        price: 5000.0,
+        icon: '🦄',
+        description: 'Radiates peaceful celestial energy, boosting your savings interest rates.'
+      },
+      {
+        id: 'pet_shadow_wolf',
+        name: 'Shadow Wolf',
+        type: 'Wolf',
+        rarity: 'Rare',
+        personality: 'Loyal',
+        skill: 'Fee Reduction',
+        price: 2500.0,
+        icon: '🐺',
+        description: 'Guards your transactions and slashes payment fees.'
+      }
+    ];
+
+    return JSON.parse(localStorage.getItem('paywell_pets_catalog')) || defaultPets;
+  },
+
+  savePetsCatalog(catalog) {
+    localStorage.setItem('paywell_pets_catalog', JSON.stringify(catalog));
+  },
+
+  createCustomPet(name, type, rarity, personality, skill, price, icon, description) {
+    const catalog = this.getPetsCatalog();
+    const newPet = {
+      id: `pet_${Date.now()}`,
+      name,
+      type: type || 'Custom Creature',
+      rarity: rarity || 'Common',
+      personality: personality || 'Playful',
+      skill: skill || 'Money Finder',
+      price: parseFloat(price || 1000),
+      icon: icon || '🐾',
+      description: description || 'Owner created custom pet.'
+    };
+    catalog.unshift(newPet);
+    this.savePetsCatalog(catalog);
+    return newPet;
+  },
+
+  getUserPets(username) {
+    const key = `paywell_user_pets_${username.toLowerCase()}`;
+    return JSON.parse(localStorage.getItem(key)) || [];
+  },
+
+  saveUserPets(username, pets) {
+    const key = `paywell_user_pets_${username.toLowerCase()}`;
+    localStorage.setItem(key, JSON.stringify(pets));
+  },
+
+  buyPet(username, petId) {
+    const catalog = this.getPetsCatalog();
+    const pet = catalog.find(p => p.id === petId);
+    if (!pet) throw new Error("Pet not found in shop catalog");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.balance < pet.price) throw new Error("Insufficient PW balance to adopt pet");
+
+    user.balance -= pet.price;
+    this.saveUsers(users);
+
+    const userPets = this.getUserPets(username);
+    const instance = {
+      instanceId: `PET-${Date.now()}`,
+      petId: pet.id,
+      name: pet.name,
+      type: pet.type,
+      rarity: pet.rarity,
+      personality: pet.personality,
+      skill: pet.skill,
+      icon: pet.icon,
+      level: 0,
+      xp: 0,
+      hunger: 100,
+      happiness: 100,
+      energy: 100,
+      lastCareDate: new Date().toISOString().split('T')[0],
+      lastDailyFindClaim: null,
+      isActive: userPets.length === 0
+    };
+
+    userPets.push(instance);
+    this.saveUserPets(username, userPets);
+
+    const tx = {
+      id: `PW-PET-${Date.now()}`,
+      sender_username: user.username,
+      receiver_username: "PayWell Pet Sanctuary",
+      amount: pet.price,
+      fee: 0,
+      total: pet.price,
+      type: 'pet_adoption',
+      note: `Adopted Pet: ${pet.name}`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return { instance, newBalance: user.balance };
+  },
+
+  petAction(username, instanceId, action) {
+    const userPets = this.getUserPets(username);
+    const pet = userPets.find(p => p.instanceId === instanceId);
+    if (!pet) throw new Error("Pet instance not found");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+
+    let xpGain = 0;
+    if (action === 'feed') {
+      if (user.balance < 10) throw new Error("Feeding costs 10 PW for organic pet food!");
+      user.balance -= 10;
+      pet.hunger = Math.min(100, pet.hunger + 30);
+      xpGain = 10;
+    } else if (action === 'play') {
+      pet.happiness = Math.min(100, pet.happiness + 25);
+      pet.energy = Math.max(0, pet.energy - 10);
+      xpGain = 15;
+    } else if (action === 'clean') {
+      pet.happiness = Math.min(100, pet.happiness + 10);
+      xpGain = 10;
+    } else if (action === 'train') {
+      if (pet.energy < 20) throw new Error("Pet is too tired! Let your pet sleep first.");
+      pet.energy -= 20;
+      xpGain = 25;
+    } else if (action === 'sleep') {
+      pet.energy = 100;
+      xpGain = 5;
+    }
+
+    pet.xp += xpGain;
+
+    // Level up calculation: Level 0->1 (100 XP), Level 1->2 (250 XP), Level 2->3 (500 XP)...
+    const reqXP = 100 * Math.pow(pet.level + 1, 1.5);
+    if (pet.xp >= reqXP) {
+      pet.level += 1;
+    }
+
+    this.saveUsers(users);
+    this.saveUserPets(username, userPets);
+
+    return { pet, newBalance: user.balance, xpGain };
+  },
+
+  claimPetDailyMoney(username, instanceId) {
+    const userPets = this.getUserPets(username);
+    const pet = userPets.find(p => p.instanceId === instanceId);
+    if (!pet) throw new Error("Pet instance not found");
+    if (pet.skill !== 'Money Finder') throw new Error("This pet skill is not Money Finder!");
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (pet.lastDailyFindClaim === todayStr) {
+      throw new Error("Your pet has already searched for PW tokens today! Check back tomorrow.");
+    }
+
+    // Money Finder ranges: Lvl 0-10: 5-20 PW, Lvl 11-20: 20-50 PW, Lvl 21-30: 50-100 PW...
+    let minAmt = 5, maxAmt = 20;
+    if (pet.level > 10) { minAmt = 20; maxAmt = 50; }
+    if (pet.level > 20) { minAmt = 50; maxAmt = 100; }
+    if (pet.level > 30) { minAmt = 100; maxAmt = 250; }
+
+    const reward = Math.floor(Math.random() * (maxAmt - minAmt + 1)) + minAmt;
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    user.balance += reward;
+
+    pet.lastDailyFindClaim = todayStr;
+
+    this.saveUsers(users);
+    this.saveUserPets(username, userPets);
+
+    const tx = {
+      id: `PW-PETFIND-${Date.now()}`,
+      sender_username: `Pet ${pet.name}`,
+      receiver_username: user.username,
+      amount: reward,
+      fee: 0,
+      total: reward,
+      type: 'pet_reward',
+      note: `Money Finder Daily Reward (${pet.name})`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return { reward, newBalance: user.balance };
+  },
+
+  // PROFILE CUSTOMIZATION SHOP & DECORATION ENGINE
+  getCustomizationCatalog() {
+    return [
+      { id: 'cust_bg_galaxy', name: 'Cosmic Galaxy Background', category: 'bg', rarity: 'Legendary', price: 1000.0, icon: '🌌', css: 'cust-bg-galaxy' },
+      { id: 'cust_bg_cyberpunk', name: 'Cyberpunk Neon City', category: 'bg', rarity: 'Epic', price: 750.0, icon: '🏙️', css: 'cust-bg-cyberpunk' },
+      { id: 'cust_frame_gold', name: 'Royal Gold Frame', category: 'frame', rarity: 'Epic', price: 500.0, icon: '🖼️', css: 'cust-frame-gold' },
+      { id: 'cust_frame_hexagon', name: 'Futuristic Hexagon Frame', category: 'frame', rarity: 'Rare', price: 300.0, icon: '⬢', css: 'cust-frame-hexagon' },
+      { id: 'cust_effect_rainbow', name: 'Rainbow Name Effect', category: 'name', rarity: 'Rare', price: 300.0, icon: '✨', css: 'cust-name-rainbow' },
+      { id: 'cust_effect_aura', name: 'Golden Aura Glow', category: 'effect', rarity: 'Legendary', price: 1200.0, icon: '💫', css: 'cust-aura-gold' }
+    ];
+  },
+
+  buyCustomizationItem(username, itemId) {
+    const catalog = this.getCustomizationCatalog();
+    const item = catalog.find(i => i.id === itemId);
+    if (!item) throw new Error("Customization item not found");
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user || user.balance < item.price) throw new Error("Insufficient PW balance");
+
+    user.balance -= item.price;
+    this.saveUsers(users);
+
+    const inv = this.getUserInventory(username);
+    if (!inv.decorations) inv.decorations = [];
+
+    inv.decorations.push({
+      instanceId: `CUST-${Date.now()}`,
+      itemId: item.id,
+      name: item.name,
+      category: item.category,
+      rarity: item.rarity,
+      icon: item.icon,
+      css: item.css,
+      equipped: true
+    });
+
+    this.saveUserInventory(username, inv);
+
+    const tx = {
+      id: `PW-CUST-${Date.now()}`,
+      sender_username: user.username,
+      receiver_username: "Profile Customization Shop",
+      amount: item.price,
+      fee: 0,
+      total: item.price,
+      type: 'customization_purchase',
+      note: `Purchased Decoration: ${item.name}`,
+      status: 'success',
+      created_at: new Date().toLocaleString()
+    };
+    this.addTransaction(tx);
+
+    return { item, newBalance: user.balance };
   },
 
   // PFT (PayWell Fashion Tokens) ENGINE
