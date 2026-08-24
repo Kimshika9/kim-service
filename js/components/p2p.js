@@ -48,9 +48,18 @@ const PayWellP2P = {
     if (!container) return;
 
     const currFilter = document.getElementById('p2p-filter-curr')?.value || 'ALL';
-    const listings = window.PayWellDB.getP2PListings().filter(l =>
-      (currFilter === 'ALL' || l.currency === currFilter) && l.status === 'active' && l.available > 0
-    );
+    const listings = window.PayWellDB.getP2PListings().map(l => ({
+      id: l.id,
+      seller: l.seller || 'Seller',
+      rating: l.rating || 5.0,
+      trades: l.trades || 25,
+      currency: l.currency || l.asset || 'PW',
+      available: l.available || l.total_amount || 1000,
+      pricePerUnit: l.pricePerUnit || l.price_mmk || 3200,
+      paymentMethods: l.paymentMethods || [l.payment_method || 'KBZPay'],
+      notes: l.notes || l.badge || 'Fast Trade',
+      status: l.status || 'active'
+    })).filter(l => (currFilter === 'ALL' || l.currency === currFilter) && l.status === 'active' && l.available > 0);
 
     if (listings.length === 0) {
       container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted); font-size:11px;">No active P2P seller listings for ${currFilter}.</div>`;
@@ -62,7 +71,7 @@ const PayWellP2P = {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <div>
             <span style="font-weight:700; color:#fff; font-size:13px;">👤 @${l.seller}</span>
-            <span style="font-size:10px; color:var(--gold-accent); margin-left:6px;">⭐ ${l.rating.toFixed(1)} (${l.trades} trades)</span>
+            <span style="font-size:10px; color:var(--gold-accent); margin-left:6px;">⭐ ${(l.rating).toFixed(1)} (${l.trades} trades)</span>
           </div>
           <span style="font-size:11px; font-weight:800; color:var(--primary-green); font-family:var(--font-mono);">${l.currency}</span>
         </div>
@@ -73,7 +82,7 @@ const PayWellP2P = {
         </div>
 
         <div style="font-size:10px; color:var(--text-muted); margin-bottom:8px;">
-          Payments: ${(l.paymentMethods || []).join(', ')} | Note: ${l.notes || 'Fast Trade'}
+          Payments: ${l.paymentMethods.join(', ')} | Note: ${l.notes}
         </div>
 
         <button onclick="PayWellP2P.initiateP2PTrade('${l.id}')" class="btn btn-gold" style="width:100%; padding:6px; font-size:11px; font-weight:700;">🛒 Buy Now (Escrow Protected)</button>
@@ -88,8 +97,15 @@ const PayWellP2P = {
       return;
     }
 
-    const listing = window.PayWellDB.getP2PListings().find(l => l.id === listingId);
-    if (!listing) return;
+    const rawListing = window.PayWellDB.getP2PListings().find(l => l.id === listingId);
+    if (!rawListing) return;
+
+    const listing = {
+      ...rawListing,
+      currency: rawListing.currency || rawListing.asset || 'PW',
+      available: rawListing.available || rawListing.total_amount || 1000,
+      pricePerUnit: rawListing.pricePerUnit || rawListing.price_mmk || 3200
+    };
 
     if (listing.seller.toLowerCase() === user.username.toLowerCase()) {
       alert("You cannot buy from your own listing!");
@@ -107,9 +123,9 @@ const PayWellP2P = {
 
     try {
       const order = window.PayWellDB.createP2POrder(user.username, listingId, amt);
-      alert(`✨ P2P Trade Order Created! #${order.orderId}\n\nEscrow is active. Transfer ${order.totalPay.toLocaleString()} KS to Seller Kpay, then confirm in My Orders chat.`);
+      alert(`✨ P2P Trade Order Created! #${order.orderId || order.id}\n\nEscrow is active. Transfer ${(order.totalPay || order.total_mmk || 0).toLocaleString()} KS to Seller Kpay, then confirm in My Orders chat.`);
       this.switchTab('orders');
-      this.openP2PChat(order.orderId);
+      this.openP2PChat(order.orderId || order.id);
     } catch (err) {
       alert(err.message || "Failed to create P2P order.");
     }
@@ -123,11 +139,6 @@ const PayWellP2P = {
     const phone = document.getElementById('lic-phone')?.value?.trim();
     const kpayNum = document.getElementById('lic-kpay-num')?.value?.trim();
     const kpayName = document.getElementById('lic-kpay-name')?.value?.trim();
-    const waveNum = document.getElementById('lic-wave-num')?.value?.trim();
-
-    const sellPW = document.getElementById('lic-chk-pw')?.checked;
-    const sellUSD = document.getElementById('lic-chk-usd')?.checked;
-    const sellMMK = document.getElementById('lic-chk-mmk')?.checked;
 
     if (!fullName || !phone || !kpayNum || !kpayName) {
       alert("Please fill in all required personal and Kpay information!");
@@ -135,13 +146,17 @@ const PayWellP2P = {
     }
 
     try {
-      const app = window.PayWellDB.submitSellerLicenseApplication(
-        user.username, fullName, phone, kpayNum, kpayName, waveNum, sellPW, sellUSD, sellMMK, 50000, 'Experienced'
-      );
-      alert(`📋 License Application Submitted (#${app.appId})!\nOwner @Yuji_luke will review your details.`);
+      const app = window.PayWellDB.submitSellerLicenseApplication({
+        username: user.username,
+        fullName,
+        phone,
+        kpayNum,
+        kpayName
+      });
+      alert(`📋 License Application Submitted!\nOwner @Yuji_luke will review your details.`);
       this.switchTab('market');
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "License submission failed");
     }
   },
 
@@ -149,7 +164,7 @@ const PayWellP2P = {
     const user = window.PayWellAuth ? window.PayWellAuth.currentUser : null;
     if (!user) return;
 
-    const curr = document.getElementById('p2p-create-curr')?.value;
+    const curr = document.getElementById('p2p-create-curr')?.value || 'PW';
     const amt = parseFloat(document.getElementById('p2p-create-amt')?.value || 0);
     const price = parseFloat(document.getElementById('p2p-create-price')?.value || 0);
     const notes = document.getElementById('p2p-create-notes')?.value?.trim();
@@ -160,11 +175,19 @@ const PayWellP2P = {
     }
 
     try {
-      const listing = window.PayWellDB.createP2PListing(user.username, curr, amt, price, ['Kpay', 'Wave'], notes);
+      const listing = window.PayWellDB.createP2PListing({
+        seller: user.username,
+        type: 'sell',
+        currency: curr,
+        total_amount: amt,
+        price_mmk: price,
+        payment_method: 'KBZPay',
+        notes: notes
+      });
       alert(`✨ P2P Listing Published (#${listing.id})! Available on P2P Feed.`);
       this.switchTab('market');
     } catch (err) {
-      alert(err.message);
+      alert(err.message || "Failed to create listing");
     }
   },
 
@@ -173,8 +196,8 @@ const PayWellP2P = {
     if (!user) return;
 
     const orders = window.PayWellDB.getP2POrders().filter(o =>
-      o.buyer.toLowerCase() === user.username.toLowerCase() ||
-      o.seller.toLowerCase() === user.username.toLowerCase()
+      (o.buyer && o.buyer.toLowerCase() === user.username.toLowerCase()) ||
+      (o.seller && o.seller.toLowerCase() === user.username.toLowerCase())
     );
 
     const container = document.getElementById('p2p-orders-container');
@@ -186,20 +209,24 @@ const PayWellP2P = {
     }
 
     container.innerHTML = orders.map(o => {
-      const isBuyer = o.buyer.toLowerCase() === user.username.toLowerCase();
+      const isBuyer = o.buyer && o.buyer.toLowerCase() === user.username.toLowerCase();
+      const orderId = o.orderId || o.id;
+      const totalPay = o.totalPay || o.total_mmk || 0;
+      const currency = o.currency || 'PW';
+
       return `
         <div class="glass-card" style="padding:12px; margin-bottom:8px; border-left:3px solid ${o.status === 'completed' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
           <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-bottom:4px;">
-            <span style="color:#fff; font-family:var(--font-mono);">${o.orderId} (${o.currency})</span>
-            <span style="color:${o.status === 'completed' ? 'var(--primary-green)' : 'var(--gold-accent)'};">${o.status.toUpperCase()}</span>
+            <span style="color:#fff; font-family:var(--font-mono);">${orderId} (${currency})</span>
+            <span style="color:${o.status === 'completed' ? 'var(--primary-green)' : 'var(--gold-accent)'};">${(o.status || 'pending').toUpperCase()}</span>
           </div>
           <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px;">
-            ${isBuyer ? `Seller: @${o.seller}` : `Buyer: @${o.buyer}`} | Amount: ${o.amount} ${o.currency} | Total: ${o.totalPay.toLocaleString()} KS
+            ${isBuyer ? `Seller: @${o.seller}` : `Buyer: @${o.buyer}`} | Amount: ${o.amount} ${currency} | Total: ${totalPay.toLocaleString()} KS
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-            <button onclick="PayWellP2P.openP2PChat('${o.orderId}')" class="btn btn-gold" style="padding:4px; font-size:10px;">💬 Trade Chat</button>
-            ${isBuyer && o.status === 'escrow_locked' ? `<button onclick="PayWellP2P.markPaymentSent('${o.orderId}')" class="btn btn-primary" style="padding:4px; font-size:10px;">✓ Mark Paid</button>` : ''}
-            ${!isBuyer && o.status === 'payment_sent' ? `<button onclick="PayWellP2P.releaseP2PEscrow('${o.orderId}')" class="btn btn-primary" style="padding:4px; font-size:10px;">🔓 Release Escrow</button>` : ''}
+            <button onclick="PayWellP2P.openP2PChat('${orderId}')" class="btn btn-gold" style="padding:4px; font-size:10px;">💬 Trade Chat</button>
+            ${isBuyer && o.status !== 'completed' ? `<button onclick="PayWellP2P.markPaymentSent('${orderId}')" class="btn btn-primary" style="padding:4px; font-size:10px;">✓ Mark Paid</button>` : ''}
+            ${!isBuyer && o.status !== 'completed' ? `<button onclick="PayWellP2P.releaseP2PEscrow('${orderId}')" class="btn btn-primary" style="padding:4px; font-size:10px;">🔓 Release Escrow</button>` : ''}
           </div>
         </div>
       `;

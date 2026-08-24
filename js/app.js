@@ -3,6 +3,8 @@
  */
 
 const PayWellApp = {
+  activeDecorTab: 'background',
+
   init() {
     window.PayWellAuth.init();
     window.PayWellRouter.init();
@@ -103,16 +105,69 @@ const PayWellApp = {
     if (headerUser) {
       headerUser.innerText = `@${user.username} ${user.role === 'owner' ? '👑' : ''}`;
     }
+    const headerId = document.getElementById('header-user-id');
+    if (headerId) {
+      headerId.innerText = `#PW-${String(user.id || 1).padStart(4, '0')}`;
+    }
+    const profileSeqId = document.getElementById('profile-seq-id');
+    if (profileSeqId) {
+      profileSeqId.innerText = `#PW-${String(user.id || 1).padStart(4, '0')}`;
+    }
   },
 
   renderDashboardBalance(user) {
     const mainEl = document.getElementById('bal-main');
     const sideEl = document.getElementById('bal-side');
-    if (!mainEl || !sideEl) return;
+    const usdEl = document.getElementById('bal-usd');
+    const mmkEl = document.getElementById('bal-mmk');
 
-    const parts = (user.balance || 0).toFixed(2).split('.');
-    mainEl.innerText = parseInt(parts[0]).toLocaleString('en-US');
-    sideEl.innerText = `.${parts[1]} PW`;
+    const bal = user.balance || 0;
+    const parts = bal.toFixed(2).split('.');
+    if (mainEl) mainEl.innerText = parseInt(parts[0]).toLocaleString('en-US');
+    if (sideEl) sideEl.innerText = `.${parts[1]} PW`;
+
+    if (usdEl) usdEl.innerText = `$${bal.toFixed(2)}`;
+    if (mmkEl) mmkEl.innerText = `${(bal * 3500).toLocaleString('en-US')} KS`;
+  },
+
+  claimDailyReward() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+    user.balance += 50.0;
+    window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+    alert("🎉 Daily Login Reward Claimed! Received +50.00 PW!");
+    this.renderDashboardBalance(user);
+  },
+
+  openProfileCustomizerModal() {
+    window.PayWellRouter.openModal('modal-profile-decor');
+    this.switchDecorTab('background');
+  },
+
+  switchDecorTab(category) {
+    this.activeDecorTab = category;
+    const items = window.PayWellDB.DECORATIONS.filter(d => d.category === category);
+    const container = document.getElementById('decor-items-grid');
+    if (!container) return;
+
+    container.innerHTML = items.map(item => `
+      <div class="glass-card" style="padding:10px; text-align:center;">
+        <div style="font-size:12px; font-weight:700; color:#fff; margin-bottom:4px;">${item.name}</div>
+        <button onclick="PayWellApp.equipDecorItem('${item.id}', '${item.category}')" class="btn btn-gold" style="padding:4px; font-size:10px;">Equip Item</button>
+      </div>
+    `).join('');
+  },
+
+  equipDecorItem(itemId, category) {
+    const item = window.PayWellDB.DECORATIONS.find(d => d.id === itemId);
+    if (!item) return;
+
+    const profileCard = document.getElementById('user-profile-card');
+    if (category === 'background' && profileCard) {
+      profileCard.style.background = item.style;
+    }
+
+    alert(`✨ Equipped ${item.name} on Profile!`);
   },
 
   loadRecentTransactions(username) {
@@ -216,6 +271,62 @@ const PayWellApp = {
     } catch (err) {
       alert(err.message || "Transfer failed.");
     }
+  },
+
+  executeEmergencyFill() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const pair = document.getElementById('emg-fill-pair').value;
+    const amount = parseFloat(document.getElementById('emg-fill-amount').value || 0);
+
+    if (amount <= 0) {
+      alert("Please enter a valid amount for emergency fill.");
+      return;
+    }
+
+    try {
+      if (pair === 'PW_USD') {
+        if (user.balance < amount) throw new Error("Insufficient PW balance for emergency fill.");
+        user.balance -= amount;
+        alert(`⚡ Emergency Fill Executed! Converted ${amount} PW to $${amount.toFixed(2)} USD.`);
+      } else {
+        user.balance += amount;
+        alert(`⚡ Emergency Fill Executed! Received ${amount.toFixed(2)} PW.`);
+      }
+
+      window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+      window.PayWellRouter.closeModal('modal-emergency-fill');
+      this.fetchUserFreshData();
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
+    } catch (e) {
+      alert(e.message || "Emergency fill failed.");
+    }
+  },
+
+  submitUserReport() {
+    const target = document.getElementById('report-target').value.trim();
+    const type = document.getElementById('report-type').value;
+    const desc = document.getElementById('report-desc').value.trim();
+
+    if (!target || !desc) {
+      alert("Please enter target username and explanation.");
+      return;
+    }
+
+    const reports = JSON.parse(localStorage.getItem('paywell_user_reports')) || [];
+    reports.unshift({
+      id: `REP-${Date.now()}`,
+      reporter: window.PayWellAuth.currentUser?.username || 'Anonymous',
+      target,
+      type,
+      desc,
+      timestamp: new Date().toLocaleString()
+    });
+    localStorage.setItem('paywell_user_reports', JSON.stringify(reports));
+
+    alert("🚩 Compliance report submitted successfully to system Owner.");
+    window.PayWellRouter.closeModal('modal-user-report');
   },
 
   openReceiptModal(txId, sender, receiver, amount, timestamp) {
