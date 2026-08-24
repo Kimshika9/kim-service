@@ -37,10 +37,9 @@ def send_welcome(message):
         f"👑 *Welcome to PayWell Mini App!*\n\n"
         f"Hello, *{username}*!\n"
         f"PayWell is your exclusive futuristic digital token payment system.\n\n"
-        f"• Daily Login Rewards & Quests 🎁\n"
-        f"• NEXORA Tournament Passes & PFT Fashion Shop 🎮🎨\n"
-        f"• PFT Auction Market with Live Bidding 🏛️\n"
-        f"• Import & Export QR Payment Transfers 🖼️\n\n"
+        f"• Check balance & transaction receipts\n"
+        f"• Instant QR payment transfers\n"
+        f"• Exclusive community store\n\n"
         f"Click the button below to launch PayWell Web App!"
     )
     bot.send_message(message.chat.id, welcome_txt, parse_mode='Markdown', reply_markup=markup)
@@ -108,21 +107,17 @@ def view_recent_receipts(message):
         )
     bot.send_message(message.chat.id, "\n".join(res), parse_mode='Markdown')
 
-@bot.message_handler(commands=['support', 'reset', 'report'])
+@bot.message_handler(commands=['support', 'reset'])
 def request_support(message):
     msg = (
-        f"🔐 *PayWell Bot Password Recovery & Support Ticket*\n\n"
-        f"Need a password reset or support report?\n"
-        f"1. *Via Email*: Send 6-digit verification code from PayWell app.\n"
-        f"2. *Report to Owner*: Contact Owner directly on Telegram: @{OWNER_USERNAME}\n\n"
-        f"State your registered PayWell username & Gmail for instant verification."
+        f"🔐 *Password Recovery & Support*\n\n"
+        f"Need a password reset or system support?\n"
+        f"Contact Owner directly on Telegram: @{OWNER_USERNAME}\n\n"
+        f"State your registered username or email for identity verification."
     )
     markup = InlineKeyboardMarkup()
-    btn_report = InlineKeyboardButton("📩 Report Password Issue to @Yuji_luke", url=f"https://t.me/{OWNER_USERNAME}")
-    webapp = WebAppInfo(MINI_APP_URL)
-    btn_app = InlineKeyboardButton("💎 Open PayWell App", web_app=webapp)
-    markup.add(btn_report)
-    markup.add(btn_app)
+    btn = InlineKeyboardButton("📩 Message @Yuji_luke", url=f"https://t.me/{OWNER_USERNAME}")
+    markup.add(btn)
     bot.send_message(message.chat.id, msg, parse_mode='Markdown', reply_markup=markup)
 
 @bot.message_handler(commands=['owner'])
@@ -168,25 +163,15 @@ def handle_web_app_data(message):
                 f"Thank you for using PayWell!",
                 parse_mode='Markdown'
             )
-        elif event_type in ['store_purchase', 'token_purchase', 'pft_purchase']:
-            item_name = data.get('item_name', 'Item/Pass')
+        elif event_type == 'store_purchase':
+            item_name = data.get('item_name', 'Item')
             bot.send_message(
                 message.chat.id,
-                f"🛍️ *PayWell Store Purchase Receipt*\n\n"
+                f"🛍️ *Store Purchase Receipt*\n\n"
                 f"Item: *{item_name}*\n"
                 f"Paid: *{amount:,.2f} PW*\n"
                 f"Receipt ID: `{tx_id}`\n\n"
-                f"Item/Pass added to your account inventory!",
-                parse_mode='Markdown'
-            )
-        elif event_type == 'auction_bid':
-            bot.send_message(
-                message.chat.id,
-                f"🏛️ *Auction Bid Placed!*\n\n"
-                f"Item: *{data.get('title', 'PFT Item')}*\n"
-                f"Bid Amount: *{amount:,.2f} PW*\n"
-                f"Receipt ID: `{tx_id}`\n\n"
-                f"Funds held in escrow. Good luck!",
+                f"Item added to your account inventory!",
                 parse_mode='Markdown'
             )
     except Exception as e:
