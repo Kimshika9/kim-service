@@ -108,6 +108,104 @@ const PayWellOwner = {
     window.PayWellRouter.closeModal('modal-owner-nexora');
   },
 
+  openPassGeneratorModal() {
+    window.PayWellRouter.openModal('modal-owner-level-pass');
+  },
+
+  submitGiftPasses() {
+    const target = document.getElementById('pass-target-user')?.value?.trim();
+    const qty = parseInt(document.getElementById('pass-qty')?.value || 1);
+
+    if (!target || qty <= 0) {
+      alert("Please enter a valid username and pass quantity.");
+      return;
+    }
+
+    const total = window.PayWellDB.addUserPassInventory(target, qty);
+    alert(`⚡ Granted ${qty} Level Up Pass(es) to @${target}! Total in user inventory: ${total}.`);
+    window.PayWellRouter.closeModal('modal-owner-level-pass');
+  },
+
+  openBotControllerModal() {
+    this.loadBotListingsingsings();
+    window.PayWellRouter.openModal('modal-owner-bots');
+  },
+
+  loadBotListingsingsings() {
+    const container = document.getElementById('owner-bots-list');
+    if (!container) return;
+    const listings = window.PayWellDB.getP2PListings().filter(l => l.isBot || l.seller.toLowerCase().includes('bot'));
+
+    if (listings.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); padding:10px; font-size:12px;">No active bot sellers.</div>';
+      return;
+    }
+
+    container.innerHTML = listings.map(b => `
+      <div class="glass-card" style="padding:10px; margin-bottom:8px; border:1px solid var(--secondary-blue);">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#fff;">
+          <span>${b.botBadge || b.seller} (${b.currency})</span>
+          <span style="color:var(--gold-accent);">${b.pricePerUnit} KS/${b.currency}</span>
+        </div>
+        <div style="font-size:10px; color:var(--text-muted); margin:4px 0;">Available: ${b.available.toLocaleString()} ${b.currency} | ${b.notes}</div>
+        <div style="display:flex; gap:6px;">
+          <button onclick="PayWellOwner.editBotPrice('${b.id}')" class="btn btn-gold" style="padding:4px; font-size:10px;">Edit Price</button>
+          <button onclick="PayWellOwner.removeBotSeller('${b.id}')" class="btn btn-danger" style="padding:4px; font-size:10px;">Remove Bot</button>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  createBotSeller() {
+    const name = prompt("Bot Name / Badge (e.g. 🤖 Official MMK Bot #3):", "🤖 Official MMK Bot #3");
+    if (!name) return;
+    const curr = prompt("Bot Currency (PW / USD / MMK):", "PW") || "PW";
+    const price = parseFloat(prompt("Price Per Unit in MMK (e.g. 4000):", "4000") || "4000");
+    const avail = parseFloat(prompt("Bot Inventory Supply Amount:", "100000") || "100000");
+
+    const listings = window.PayWellDB.getP2PListings();
+    const newBot = {
+      id: `BOT-${Date.now()}`,
+      seller: name.replace(/[^a-zA-Z0-9_]/g, '_'),
+      isBot: true,
+      botBadge: name,
+      rating: 5.0,
+      trades: 1000,
+      currency: curr.toUpperCase(),
+      available: avail,
+      pricePerUnit: price,
+      paymentMethods: ['KBZPay', 'WavePay'],
+      notes: 'Owner Created Official Bot Seller',
+      status: 'active'
+    };
+    listings.unshift(newBot);
+    window.PayWellDB.saveP2PListings(listings);
+    alert(`🤖 Bot Seller Created: ${name}!`);
+    this.loadBotListingsingsings();
+  },
+
+  editBotPrice(botId) {
+    const listings = window.PayWellDB.getP2PListings();
+    const bot = listings.find(l => l.id === botId);
+    if (!bot) return;
+
+    const newPrice = prompt(`Enter new price in KS for ${bot.botBadge || bot.seller}:`, bot.pricePerUnit);
+    if (!newPrice) return;
+
+    bot.pricePerUnit = parseFloat(newPrice);
+    window.PayWellDB.saveP2PListings(listings);
+    alert(`✓ Updated bot price to ${bot.pricePerUnit} KS!`);
+    this.loadBotListingsingsings();
+  },
+
+  removeBotSeller(botId) {
+    let listings = window.PayWellDB.getP2PListings();
+    listings = listings.filter(l => l.id !== botId);
+    window.PayWellDB.saveP2PListings(listings);
+    alert("🗑️ Bot seller removed.");
+    this.loadBotListingsingsings();
+  },
+
   openKpayRequestsModal() {
     this.loadKpayRequests();
     window.PayWellRouter.openModal('modal-owner-kpay');

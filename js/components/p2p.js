@@ -66,28 +66,38 @@ const PayWellP2P = {
       return;
     }
 
-    container.innerHTML = listings.map(l => `
-      <div class="glass-card" style="padding:12px; margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <div>
-            <span style="font-weight:700; color:#fff; font-size:13px;">👤 @${l.seller}</span>
-            <span style="font-size:10px; color:var(--gold-accent); margin-left:6px;">⭐ ${(l.rating).toFixed(1)} (${l.trades} trades)</span>
+    container.innerHTML = listings.map(l => {
+      const isBot = l.isBot || l.seller.toLowerCase().includes('bot');
+      const badgeStyle = isBot
+        ? 'background:rgba(0,180,216,0.2); color:#00B4D8; border:1px solid #00B4D8;'
+        : 'background:rgba(0,230,118,0.2); color:#00E676; border:1px solid #00E676;';
+      const badgeText = isBot ? '🤖 Bot Seller (Verified)' : '👤 Trusted Seller';
+
+      return `
+        <div class="glass-card" style="padding:12px; margin-bottom:8px; border:1px solid ${isBot ? 'var(--secondary-blue)' : 'var(--border-glass)'};">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div>
+              <span style="font-weight:700; color:#fff; font-size:13px;">${isBot ? l.botBadge || l.seller : `@${l.seller}`}</span>
+              <span style="font-size:9px; padding:2px 6px; border-radius:10px; margin-left:6px; font-weight:700; ${badgeStyle}">${badgeText}</span>
+            </div>
+            <span style="font-size:11px; font-weight:800; color:var(--primary-green); font-family:var(--font-mono);">${l.currency}</span>
           </div>
-          <span style="font-size:11px; font-weight:800; color:var(--primary-green); font-family:var(--font-mono);">${l.currency}</span>
-        </div>
 
-        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:8px;">
-          <span>Available: <b style="color:#fff;">${l.available.toLocaleString()} ${l.currency}</b></span>
-          <span>Price: <b style="color:var(--gold-accent);">${l.pricePerUnit} KS/${l.currency}</b></span>
-        </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+            <span>Available: <b style="color:#fff;">${l.available.toLocaleString()} ${l.currency}</b></span>
+            <span>Price: <b style="color:var(--gold-accent);">${l.pricePerUnit} KS/${l.currency}</b></span>
+          </div>
 
-        <div style="font-size:10px; color:var(--text-muted); margin-bottom:8px;">
-          Payments: ${l.paymentMethods.join(', ')} | Note: ${l.notes}
-        </div>
+          <div style="font-size:10px; color:var(--text-muted); margin-bottom:8px;">
+            Payments: ${l.paymentMethods.join(', ')} | Note: ${l.notes}
+          </div>
 
-        <button onclick="PayWellP2P.initiateP2PTrade('${l.id}')" class="btn btn-gold" style="width:100%; padding:6px; font-size:11px; font-weight:700;">🛒 Buy Now (Escrow Protected)</button>
-      </div>
-    `).join('');
+          <button onclick="PayWellP2P.initiateP2PTrade('${l.id}')" class="btn ${isBot ? 'btn-primary' : 'btn-gold'}" style="width:100%; padding:6px; font-size:11px; font-weight:700;">
+            ${isBot ? '⚡ Buy Now (Instant Bot Credit)' : '🛒 Buy Now (Escrow Protected)'}
+          </button>
+        </div>
+      `;
+    }).join('');
   },
 
   initiateP2PTrade(listingId) {
@@ -123,9 +133,21 @@ const PayWellP2P = {
 
     try {
       const order = window.PayWellDB.createP2POrder(user.username, listingId, amt);
-      alert(`✨ P2P Trade Order Created! #${order.orderId || order.id}\n\nEscrow is active. Transfer ${(order.totalPay || order.total_mmk || 0).toLocaleString()} KS to Seller Kpay, then confirm in My Orders chat.`);
-      this.switchTab('orders');
-      this.openP2PChat(order.orderId || order.id);
+      const isBot = listing.isBot || listing.seller.toLowerCase().includes('bot');
+
+      if (isBot) {
+        user.balance += amt;
+        window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+        alert(`🤖 Bot Seller Order Auto-Confirmed!\nInstant Credit: +${amt} ${listing.currency} added to @${user.username} balance!`);
+        if (window.PayWellApp) {
+          window.PayWellApp.fetchUserFreshData();
+          window.PayWellApp.renderDashboardBalance(window.PayWellAuth.currentUser);
+        }
+      } else {
+        alert(`✨ P2P Trade Order Created! #${order.orderId || order.id}\n\nEscrow is active. Transfer ${(order.totalPay || order.total_mmk || 0).toLocaleString()} KS to Seller Kpay, then confirm in My Orders chat.`);
+        this.switchTab('orders');
+        this.openP2PChat(order.orderId || order.id);
+      }
     } catch (err) {
       alert(err.message || "Failed to create P2P order.");
     }
@@ -321,3 +343,171 @@ const PayWellP2P = {
 };
 
 window.PayWellP2P = PayWellP2P;
+
+/**
+ * Global Marketplace Controller (USD, MMK, PW, Items & Comment Threading)
+ */
+const PayWellMarket = {
+  activeCategory: 'ALL',
+
+  init() {},
+
+  openMarket() {
+    window.PayWellRouter.openModal('modal-global-market');
+    this.renderListings();
+  },
+
+  filterCategory(cat) {
+    this.activeCategory = cat;
+    ['ALL', 'USD', 'MMK', 'PW', 'Items'].forEach(c => {
+      const btn = document.getElementById(`mkt-cat-${c}`);
+      if (btn) btn.className = c === cat ? 'btn btn-primary' : 'btn btn-glass';
+    });
+    this.renderListings();
+  },
+
+  renderListings() {
+    const container = document.getElementById('global-market-listings');
+    if (!container) return;
+
+    let listings = window.PayWellDB.getGlobalMarketListings();
+    if (this.activeCategory !== 'ALL') {
+      listings = listings.filter(l => l.category === this.activeCategory);
+    }
+
+    if (listings.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">No listings in category "${this.activeCategory}". Be the first to create one!</div>`;
+      return;
+    }
+
+    container.innerHTML = listings.map(l => `
+      <div class="glass-card" style="padding:14px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:24px;">${l.image || '🛒'}</span>
+            <div>
+              <div style="font-weight:700; color:#fff; font-size:14px;">${l.title}</div>
+              <div style="font-size:10px; color:var(--gold-accent);">Seller: @${l.seller} • Qty: ${l.qty}</div>
+            </div>
+          </div>
+          <span style="font-family:var(--font-mono); font-weight:800; color:var(--primary-green); font-size:14px;">${l.price.toLocaleString()} ${l.currency}</span>
+        </div>
+
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">${l.desc}</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;">
+          <button onclick="PayWellMarket.buyListing('${l.id}')" class="btn btn-primary" style="padding:6px; font-size:11px;">🛒 Buy Listing</button>
+          <button onclick="PayWellMarket.toggleComments('${l.id}')" class="btn btn-glass" style="padding:6px; font-size:11px;">💬 Comments (${(l.comments || []).length})</button>
+        </div>
+
+        <!-- Comments Section -->
+        <div id="comments-box-${l.id}" style="display:none; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid var(--border-glass);">
+          <div style="max-height:140px; overflow-y:auto; margin-bottom:8px;">
+            ${(l.comments || []).map(c => `
+              <div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between; color:var(--gold-accent); font-weight:700;">
+                  <span>@${c.user}</span>
+                  <span onclick="PayWellMarket.likeComment('${l.id}', '${c.id}')" style="cursor:pointer; color:var(--primary-green);">👍 ${c.likes || 0}</span>
+                </div>
+                <div style="color:#fff; margin-top:2px;">${c.text}</div>
+              </div>
+            `).join('') || '<div style="font-size:10px; color:var(--text-muted);">No comments yet. Write a comment below!</div>'}
+          </div>
+
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="comment-input-${l.id}" class="form-input" style="padding:4px 8px; font-size:11px;" placeholder="Write a comment or ask seller...">
+            <button onclick="PayWellMarket.submitComment('${l.id}')" class="btn btn-gold" style="width:auto; padding:4px 10px; font-size:10px;">Post</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  buyListing(id) {
+    const user = window.PayWellAuth ? window.PayWellAuth.currentUser : null;
+    if (!user) {
+      alert("Please log in to purchase!");
+      return;
+    }
+
+    const listings = window.PayWellDB.getGlobalMarketListings();
+    const l = listings.find(item => item.id === id);
+    if (!l) return;
+
+    if (confirm(`Buy "${l.title}" for ${l.price.toLocaleString()} ${l.currency}?`)) {
+      alert(`🎉 Purchase Successful! Item "${l.title}" acquired from @${l.seller}.`);
+      this.renderListings();
+    }
+  },
+
+  toggleComments(id) {
+    const box = document.getElementById(`comments-box-${id}`);
+    if (box) {
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+  },
+
+  submitComment(id) {
+    const user = window.PayWellAuth ? window.PayWellAuth.currentUser : null;
+    if (!user) return;
+
+    const input = document.getElementById(`comment-input-${id}`);
+    const text = input?.value?.trim();
+    if (!text) return;
+
+    window.PayWellDB.addGlobalListingComment(id, user.username, text);
+    if (input) input.value = '';
+    this.renderListings();
+    this.toggleComments(id);
+  },
+
+  likeComment(listingId, commentId) {
+    window.PayWellDB.likeGlobalListingComment(listingId, commentId);
+    this.renderListings();
+    this.toggleComments(listingId);
+  },
+
+  openCreateModal() {
+    window.PayWellRouter.openModal('modal-create-global-listing');
+  },
+
+  submitNewListing() {
+    const user = window.PayWellAuth ? window.PayWellAuth.currentUser : null;
+    if (!user) return;
+
+    const cat = document.getElementById('g-mkt-cat')?.value || 'PW';
+    const title = document.getElementById('g-mkt-title')?.value?.trim();
+    const desc = document.getElementById('g-mkt-desc')?.value?.trim();
+    const price = parseFloat(document.getElementById('g-mkt-price')?.value || 0);
+    const curr = document.getElementById('g-mkt-curr')?.value || 'PW';
+    const qty = parseInt(document.getElementById('g-mkt-qty')?.value || 1);
+    const img = document.getElementById('g-mkt-img')?.value || '📦';
+
+    if (!title || price <= 0) {
+      alert("Please enter a valid title and price!");
+      return;
+    }
+
+    const listings = window.PayWellDB.getGlobalMarketListings();
+    listings.unshift({
+      id: `MKT-${Date.now()}`,
+      seller: user.username,
+      category: cat,
+      title: title,
+      desc: desc || title,
+      price: price,
+      currency: curr,
+      qty: qty,
+      image: img,
+      comments: [],
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    window.PayWellDB.saveGlobalMarketListings(listings);
+
+    alert(`✨ Global Market Listing Published: "${title}"!`);
+    window.PayWellRouter.closeModal('modal-create-global-listing');
+    this.renderListings();
+  }
+};
+
+window.PayWellMarket = PayWellMarket;

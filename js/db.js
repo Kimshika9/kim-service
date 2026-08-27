@@ -20,6 +20,9 @@ const PayWellDB = {
   STORAGE_KPAY_WITHDRAWALS: 'paywell_db_kpay_withdrawals',
   STORAGE_PENALTIES: 'paywell_db_penalties',
   STORAGE_STREAKS: 'paywell_db_streaks',
+  STORAGE_GLOBAL_MARKET: 'paywell_db_global_market',
+  STORAGE_VISA_CARDS: 'paywell_db_visa_cards',
+  STORAGE_LEVEL_PASSES: 'paywell_db_level_passes',
 
   // All 20 Requested Cryptocurrencies
   CRYPTO_COINS: [
@@ -592,13 +595,239 @@ const PayWellDB = {
     return { new_balance: user.balance, cryptoAmount: cryptoAmount, coin: coin };
   },
 
-  // --- P2P ESCROW MARKETPLACE ---
+  // --- P2P ESCROW MARKETPLACE & BOT SELLERS ---
   getP2PListings() {
     try {
-      return JSON.parse(localStorage.getItem(this.STORAGE_P2P_LISTINGS)) || [];
+      let listings = JSON.parse(localStorage.getItem(this.STORAGE_P2P_LISTINGS));
+      if (!listings || listings.length === 0) {
+        listings = [
+          {
+            id: 'BOT-PW-001',
+            seller: 'PayWell_Bot_PW',
+            isBot: true,
+            botBadge: '🤖 Official PW Bot',
+            rating: 5.0,
+            trades: 9999,
+            currency: 'PW',
+            available: 100000,
+            pricePerUnit: 4000,
+            paymentMethods: ['KBZPay', 'WavePay'],
+            notes: '24/7 Instant Auto-Processing Bot',
+            status: 'active'
+          },
+          {
+            id: 'BOT-USD-002',
+            seller: 'PayWell_Bot_USD',
+            isBot: true,
+            botBadge: '🤖 Official USD Bot',
+            rating: 5.0,
+            trades: 8500,
+            currency: 'USD',
+            available: 50000,
+            pricePerUnit: 4000,
+            paymentMethods: ['KBZPay', 'WavePay'],
+            notes: '24/7 Global USD Auto-Bot',
+            status: 'active'
+          },
+          {
+            id: 'P2P-LST-003',
+            seller: 'Seller_Master',
+            isBot: false,
+            rating: 4.9,
+            trades: 142,
+            currency: 'PW',
+            available: 10000,
+            pricePerUnit: 3950,
+            paymentMethods: ['KBZPay'],
+            notes: 'Fast 5 Min Manual Release',
+            status: 'active'
+          }
+        ];
+        localStorage.setItem(this.STORAGE_P2P_LISTINGS, JSON.stringify(listings));
+      }
+      return listings;
     } catch (e) {
       return [];
     }
+  },
+
+  saveP2PListings(listings) {
+    localStorage.setItem(this.STORAGE_P2P_LISTINGS, JSON.stringify(listings));
+  },
+
+  // --- GLOBAL MARKETPLACE ---
+  getGlobalMarketListings() {
+    try {
+      let listings = JSON.parse(localStorage.getItem(this.STORAGE_GLOBAL_MARKET));
+      if (!listings || listings.length === 0) {
+        listings = [
+          {
+            id: 'MKT-001',
+            seller: 'Yuji_luke',
+            category: 'PW',
+            title: '100 PW Community Token Bundle',
+            desc: 'Direct seller bundle for quick community transactions',
+            price: 400000,
+            currency: 'MMK',
+            qty: 10,
+            image: '🪙',
+            comments: [
+              { id: 'c1', user: 'Member_01', text: 'Fast response and trusted seller!', likes: 3, time: '10m ago' }
+            ],
+            createdAt: '2024-05-20'
+          },
+          {
+            id: 'MKT-002',
+            seller: 'CryptoKing',
+            category: 'USD',
+            title: '10 USD Global Trading Pool',
+            desc: 'Instant trade pool for international items and tokens',
+            price: 45000,
+            currency: 'MMK',
+            qty: 5,
+            image: '💵',
+            comments: [],
+            createdAt: '2024-05-20'
+          },
+          {
+            id: 'MKT-003',
+            seller: 'PetMaster',
+            category: 'Items',
+            title: 'Rare Cyber Phoenix Egg #088',
+            desc: 'Exclusive high XP pet egg with Savings Boost passive skill',
+            price: 2500,
+            currency: 'PW',
+            qty: 1,
+            image: '🥚',
+            comments: [
+              { id: 'c2', user: 'DragonRider', text: 'Does this have +15% XP skill?', likes: 1, time: '1h ago' }
+            ],
+            createdAt: '2024-05-19'
+          }
+        ];
+        localStorage.setItem(this.STORAGE_GLOBAL_MARKET, JSON.stringify(listings));
+      }
+      return listings;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  saveGlobalMarketListings(listings) {
+    localStorage.setItem(this.STORAGE_GLOBAL_MARKET, JSON.stringify(listings));
+  },
+
+  addGlobalListingComment(listingId, username, commentText) {
+    const listings = this.getGlobalMarketListings();
+    const listing = listings.find(l => l.id === listingId);
+    if (!listing) throw new Error("Listing not found");
+    if (!listing.comments) listing.comments = [];
+    const newComment = {
+      id: `CMT-${Date.now()}`,
+      user: username,
+      text: commentText,
+      likes: 0,
+      time: 'Just now'
+    };
+    listing.comments.push(newComment);
+    this.saveGlobalMarketListings(listings);
+    return newComment;
+  },
+
+  likeGlobalListingComment(listingId, commentId) {
+    const listings = this.getGlobalMarketListings();
+    const listing = listings.find(l => l.id === listingId);
+    if (!listing || !listing.comments) return;
+    const comment = listing.comments.find(c => c.id === commentId);
+    if (comment) {
+      comment.likes = (comment.likes || 0) + 1;
+      this.saveGlobalMarketListings(listings);
+    }
+  },
+
+  // --- PAYWELL VISA CARDS ---
+  getVisaCard(username) {
+    try {
+      const cards = JSON.parse(localStorage.getItem(this.STORAGE_VISA_CARDS)) || {};
+      return cards[username.toLowerCase()] || null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  issueVisaCard(username, cardType, cardHolderName) {
+    const cards = JSON.parse(localStorage.getItem(this.STORAGE_VISA_CARDS)) || {};
+    const cardNum = `4556 ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`;
+    const newCard = {
+      cardNumber: cardNum,
+      cardHolder: cardHolderName || username,
+      type: cardType, // 'Standard', 'Premium', 'Gold'
+      expiry: '12/28',
+      cvv: String(Math.floor(100 + Math.random() * 900)),
+      status: 'Active',
+      issuedAt: new Date().toLocaleDateString()
+    };
+    cards[username.toLowerCase()] = newCard;
+    localStorage.setItem(this.STORAGE_VISA_CARDS, JSON.stringify(cards));
+    return newCard;
+  },
+
+  toggleVisaCardStatus(username) {
+    const cards = JSON.parse(localStorage.getItem(this.STORAGE_VISA_CARDS)) || {};
+    const card = cards[username.toLowerCase()];
+    if (card) {
+      card.status = card.status === 'Active' ? 'Frozen' : 'Active';
+      localStorage.setItem(this.STORAGE_VISA_CARDS, JSON.stringify(cards));
+      return card;
+    }
+    return null;
+  },
+
+  // --- ACCOUNT LEVEL & LEVEL UP PASSES ---
+  getUserLevel(username) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    return user ? (user.level || 1) : 1;
+  },
+
+  setUserLevel(username, level) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (user) {
+      user.level = Math.min(3, Math.max(1, level));
+      this.saveUsers(users);
+      return user.level;
+    }
+    return 1;
+  },
+
+  getUserPassInventory(username) {
+    try {
+      const inventory = JSON.parse(localStorage.getItem(this.STORAGE_LEVEL_PASSES)) || {};
+      return inventory[username.toLowerCase()] || 0;
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  addUserPassInventory(username, qty) {
+    const inventory = JSON.parse(localStorage.getItem(this.STORAGE_LEVEL_PASSES)) || {};
+    const curr = inventory[username.toLowerCase()] || 0;
+    inventory[username.toLowerCase()] = Math.max(0, curr + qty);
+    localStorage.setItem(this.STORAGE_LEVEL_PASSES, JSON.stringify(inventory));
+    return inventory[username.toLowerCase()];
+  },
+
+  useLevelUpPass(username) {
+    const qty = this.getUserPassInventory(username);
+    if (qty <= 0) throw new Error("No Level Up Pass in inventory!");
+
+    const currLvl = this.getUserLevel(username);
+    if (currLvl >= 3) throw new Error("Already at maximum Level 3!");
+
+    this.addUserPassInventory(username, -1);
+    const newLvl = this.setUserLevel(username, currLvl + 1);
+    return newLvl;
   },
 
   createP2POrder(buyerUsername, listingId, amount) {

@@ -19,8 +19,8 @@ async def run():
         await page.wait_for_timeout(1000)
 
         # Check Balance
-        bal = await page.inner_text("#bal-main")
-        print(f"Registered user balance: {bal} PW")
+        bal = await page.inner_text("#bal-primary-display")
+        print(f"Registered user balance: {bal}")
 
         # Open Pet Modal and interact
         await page.evaluate("PayWellPet.openPetModal()")

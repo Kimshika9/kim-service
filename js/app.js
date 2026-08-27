@@ -4,6 +4,8 @@
 
 const PayWellApp = {
   activeDecorTab: 'background',
+  activeCurrencyIndex: 0, // 0: PW, 1: USD, 2: MMK
+  isBalanceHidden: false,
 
   init() {
     window.PayWellAuth.init();
@@ -103,8 +105,9 @@ const PayWellApp = {
 
   renderHeader(user) {
     const headerUser = document.getElementById('header-username');
+    const lvl = window.PayWellDB.getUserLevel(user.username);
     if (headerUser) {
-      headerUser.innerText = `@${user.username} ${user.role === 'owner' ? '👑' : ''}`;
+      headerUser.innerText = `@${user.username} (Lvl ${lvl}) ${user.role === 'owner' ? '👑' : ''}`;
     }
     const headerId = document.getElementById('header-user-id');
     if (headerId) {
@@ -114,21 +117,150 @@ const PayWellApp = {
     if (profileSeqId) {
       profileSeqId.innerText = `#PW-${String(user.id || 1).padStart(4, '0')}`;
     }
+    const profileLvlEl = document.getElementById('profile-level-badge');
+    if (profileLvlEl) {
+      profileLvlEl.innerText = `Level ${lvl}`;
+    }
+  },
+
+  openLevelPassModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    window.PayWellRouter.openModal('modal-user-pass');
+    this.renderUserLevelPassDetails();
+  },
+
+  renderUserLevelPassDetails() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const qty = window.PayWellDB.getUserPassInventory(user.username);
+    const lvl = window.PayWellDB.getUserLevel(user.username);
+
+    const qtyEl = document.getElementById('user-pass-count');
+    const lvlEl = document.getElementById('user-curr-level');
+
+    if (qtyEl) qtyEl.innerText = qty;
+    if (lvlEl) lvlEl.innerText = `Level ${lvl}`;
+  },
+
+  useLevelPassSelf() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    try {
+      const newLvl = window.PayWellDB.useLevelUpPass(user.username);
+      alert(`🚀 Level Up Success! Account upgraded to Level ${newLvl}! All Level ${newLvl} features unlocked.`);
+      this.renderHeader(user);
+      this.renderUserLevelPassDetails();
+    } catch (e) {
+      alert(e.message || "Failed to use pass.");
+    }
+  },
+
+  openGiftCardModal() {
+    window.PayWellRouter.openModal('modal-gift-card');
+  },
+
+  submitGiftCardPurchase() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const pkg = document.getElementById('giftcard-package-select')?.value || '500';
+    const amount = parseFloat(pkg);
+    const recipient = document.getElementById('giftcard-recipient')?.value?.trim();
+    const msg = document.getElementById('giftcard-message')?.value?.trim();
+
+    if (!recipient) {
+      alert("Please enter recipient email or username!");
+      return;
+    }
+
+    if (user.balance < amount) {
+      alert(`Insufficient balance to purchase this gift card (${amount} PW required).`);
+      return;
+    }
+
+    user.balance -= amount;
+    window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+
+    alert(`🎁 Gift Card (${amount} PW) Sent Successfully to ${recipient}!\nNote: "${msg || 'Gift Card from PayWell'}"`);
+    window.PayWellRouter.closeModal('modal-gift-card');
+    this.fetchUserFreshData();
+    this.renderDashboardBalance(window.PayWellAuth.currentUser);
+  },
+
+  giftLevelPassOther() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const qty = window.PayWellDB.getUserPassInventory(user.username);
+    if (qty <= 0) {
+      alert("No Level Up Pass available in inventory to gift!");
+      return;
+    }
+
+    const recipient = prompt("Enter username of recipient to gift Level Up Pass:");
+    if (!recipient) return;
+
+    window.PayWellDB.addUserPassInventory(user.username, -1);
+    window.PayWellDB.addUserPassInventory(recipient, 1);
+    alert(`🎁 Level Up Pass gifted to @${recipient}!`);
+    this.renderUserLevelPassDetails();
+  },
+
+  rotateCurrency() {
+    this.activeCurrencyIndex = (this.activeCurrencyIndex + 1) % 3;
+    const wrap = document.getElementById('bal-primary-wrap');
+    if (wrap) {
+      wrap.style.transform = 'translateY(-10px)';
+      wrap.style.opacity = '0';
+      setTimeout(() => {
+        this.renderDashboardBalance(window.PayWellAuth.currentUser);
+        wrap.style.transform = 'translateY(0)';
+        wrap.style.opacity = '1';
+      }, 150);
+    } else {
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
+    }
+  },
+
+  toggleBalanceVisibility() {
+    this.isBalanceHidden = !this.isBalanceHidden;
+    this.renderDashboardBalance(window.PayWellAuth.currentUser);
   },
 
   renderDashboardBalance(user) {
-    const mainEl = document.getElementById('bal-main');
-    const sideEl = document.getElementById('bal-side');
-    const usdEl = document.getElementById('bal-usd');
-    const mmkEl = document.getElementById('bal-mmk');
-
+    if (!user) return;
     const bal = user.balance || 0;
-    const parts = bal.toFixed(2).split('.');
-    if (mainEl) mainEl.innerText = parseInt(parts[0]).toLocaleString('en-US');
-    if (sideEl) sideEl.innerText = `.${parts[1]} PW`;
+    const usdVal = bal * 1.0; // 1 PW = 1 USD
+    const mmkVal = bal * 4000; // 1 PW = 4,000 MMK
 
-    if (usdEl) usdEl.innerText = `$${bal.toFixed(2)}`;
-    if (mmkEl) mmkEl.innerText = `${(bal * 3500).toLocaleString('en-US')} KS`;
+    const primaryEl = document.getElementById('bal-primary-display');
+    const secondaryEl = document.getElementById('bal-secondary-display');
+    const badgeEl = document.getElementById('active-currency-badge');
+
+    if (this.isBalanceHidden) {
+      if (primaryEl) primaryEl.innerText = "••••••••";
+      if (secondaryEl) secondaryEl.innerText = "•••• USD  •  •••• KS MMK";
+      if (badgeEl) badgeEl.innerText = "HIDDEN";
+      return;
+    }
+
+    if (this.activeCurrencyIndex === 0) { // PW Primary
+      if (badgeEl) badgeEl.innerText = "PW";
+      if (primaryEl) primaryEl.innerText = `PW ${bal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      if (secondaryEl) secondaryEl.innerText = `$${usdVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD  •  ${mmkVal.toLocaleString('en-US')} KS MMK`;
+    } else if (this.activeCurrencyIndex === 1) { // USD Primary
+      if (badgeEl) badgeEl.innerText = "USD";
+      if (primaryEl) primaryEl.innerText = `$ ${usdVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      if (secondaryEl) secondaryEl.innerText = `PW ${bal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}  •  ${mmkVal.toLocaleString('en-US')} KS MMK`;
+    } else { // MMK Primary
+      if (badgeEl) badgeEl.innerText = "MMK";
+      if (primaryEl) primaryEl.innerText = `${mmkVal.toLocaleString('en-US')} KS`;
+      if (secondaryEl) secondaryEl.innerText = `PW ${bal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}  •  $${usdVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
+    }
   },
 
   claimDailyReward() {
@@ -138,6 +270,169 @@ const PayWellApp = {
     window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
     alert("🎉 Daily Login Reward Claimed! Received +50.00 PW!");
     this.renderDashboardBalance(user);
+  },
+
+  openVisaModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    window.PayWellRouter.openModal('modal-visa');
+    this.renderVisaDetails();
+  },
+
+  renderVisaDetails() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const card = window.PayWellDB.getVisaCard(user.username);
+    const applyPanel = document.getElementById('visa-apply-panel');
+    const displayPanel = document.getElementById('visa-display-panel');
+
+    if (!card) {
+      if (applyPanel) applyPanel.style.display = 'block';
+      if (displayPanel) displayPanel.style.display = 'none';
+      return;
+    }
+
+    if (applyPanel) applyPanel.style.display = 'none';
+    if (displayPanel) displayPanel.style.display = 'block';
+
+    const cardNumEl = document.getElementById('visa-card-number');
+    const cardHolderEl = document.getElementById('visa-card-holder');
+    const cardExpEl = document.getElementById('visa-card-expiry');
+    const cardCvvEl = document.getElementById('visa-card-cvv');
+    const cardBadgeEl = document.getElementById('visa-card-badge');
+    const cardBox = document.getElementById('visa-card-box');
+    const freezeBtn = document.getElementById('visa-freeze-btn');
+
+    if (cardNumEl) cardNumEl.innerText = card.cardNumber;
+    if (cardHolderEl) cardHolderEl.innerText = card.cardHolder.toUpperCase();
+    if (cardExpEl) cardExpEl.innerText = card.expiry;
+    if (cardCvvEl) cardCvvEl.innerText = card.cvv;
+    if (cardBadgeEl) cardBadgeEl.innerText = `${card.type.toUpperCase()} • ${card.status.toUpperCase()}`;
+
+    if (cardBox) {
+      if (card.type === 'Gold') {
+        cardBox.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA000 100%)';
+        cardBox.style.color = '#0A0A0F';
+        cardBox.style.boxShadow = '0 0 25px rgba(255, 215, 0, 0.6)';
+      } else if (card.type === 'Premium') {
+        cardBox.style.background = 'linear-gradient(135deg, #E0E0E0 0%, #9E9E9E 100%)';
+        cardBox.style.color = '#0A0A0F';
+        cardBox.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.4)';
+      } else {
+        cardBox.style.background = 'linear-gradient(135deg, #00E676 0%, #00B0FF 100%)';
+        cardBox.style.color = '#0A0A0F';
+        cardBox.style.boxShadow = '0 0 20px rgba(0, 230, 118, 0.4)';
+      }
+    }
+
+    if (freezeBtn) {
+      freezeBtn.innerText = card.status === 'Active' ? '❄️ Freeze Card' : '🔥 Unfreeze Card';
+      freezeBtn.className = card.status === 'Active' ? 'btn btn-danger' : 'btn btn-primary';
+    }
+  },
+
+  submitVisaApplication() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const holderName = document.getElementById('visa-app-name')?.value?.trim() || user.username;
+    const type = document.getElementById('visa-app-type')?.value || 'Standard';
+
+    let cost = 0;
+    if (type === 'Premium') cost = 100;
+    if (type === 'Gold') cost = 500;
+
+    if (cost > 0 && user.balance < cost) {
+      alert(`Insufficient balance to apply for ${type} Visa Card (${cost} PW required).`);
+      return;
+    }
+
+    if (cost > 0) {
+      user.balance -= cost;
+      window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+    }
+
+    const card = window.PayWellDB.issueVisaCard(user.username, type, holderName);
+    alert(`💳 Congratulations! Your PayWell ${card.type} Visa Card has been issued!`);
+    this.fetchUserFreshData();
+    this.renderDashboardBalance(window.PayWellAuth.currentUser);
+    this.renderVisaDetails();
+  },
+
+  toggleVisaFreeze() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const card = window.PayWellDB.toggleVisaCardStatus(user.username);
+    if (card) {
+      alert(`💳 Visa Card status changed to [${card.status.toUpperCase()}]`);
+      this.renderVisaDetails();
+    }
+  },
+
+  openConnectedCheckoutDemo() {
+    window.PayWellRouter.openModal('modal-connected-checkout');
+  },
+
+  confirmConnectedPayment() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const payMethod = document.getElementById('checkout-method-select')?.value || 'balance';
+    const amount = 500.0; // NEXORA Tournament Entry
+
+    if (payMethod === 'visa') {
+      const card = window.PayWellDB.getVisaCard(user.username);
+      if (!card || card.status !== 'Active') {
+        alert("Active PayWell Visa Card required for Visa Checkout!");
+        return;
+      }
+    } else {
+      if (user.balance < amount) {
+        alert("Insufficient PW balance for NEXORA Tournament checkout.");
+        return;
+      }
+      user.balance -= amount;
+      window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+    }
+
+    alert(`🎉 Connected Web Payment Approved!\nPaid ${amount} PW to NEXORA Platform via ${payMethod.toUpperCase()}.`);
+    window.PayWellRouter.closeModal('modal-connected-checkout');
+    this.fetchUserFreshData();
+    this.renderDashboardBalance(window.PayWellAuth.currentUser);
+  },
+
+  openProfileIDCardModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    window.PayWellRouter.openModal('modal-profile-idcard');
+
+    const idNumEl = document.getElementById('idcard-num');
+    const nameEl = document.getElementById('idcard-username');
+    const lvlEl = document.getElementById('idcard-level');
+    const qrCanvas = document.getElementById('idcard-qr-canvas');
+
+    const lvl = window.PayWellDB.getUserLevel(user.username);
+    const seqId = `#PW-${String(user.id || 1).padStart(4, '0')}`;
+
+    if (idNumEl) idNumEl.innerText = seqId;
+    if (nameEl) nameEl.innerText = `@${user.username}`;
+    if (lvlEl) lvlEl.innerText = `Level ${lvl} Verified`;
+
+    if (qrCanvas && window.QRCode) {
+      qrCanvas.innerHTML = "";
+      new window.QRCode(qrCanvas, {
+        text: `PAYWELL_USER:${user.username}:${seqId}`,
+        width: 100,
+        height: 100,
+        colorDark: "#0A0A0F",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
   },
 
   openProfileCustomizerModal() {
@@ -448,6 +743,35 @@ const PayWellApp = {
       const key = el.dataset.i18n;
       el.innerText = window.PayWellI18n.t(key);
     });
+  },
+
+  setUIMode(mode) {
+    const user = window.PayWellAuth.currentUser;
+    if (mode === 'ultra' && (!user || user.role !== 'owner')) {
+      const ownedUltra = localStorage.getItem('paywell_owned_ultra_ui') === 'true';
+      if (!ownedUltra) {
+        if (confirm("🎨 Ultra Liquid UI Mode costs 1,000 PW for Lifetime Access. Unlock now?")) {
+          if (!user || user.balance < 1000) {
+            alert("Insufficient PW balance to unlock Ultra UI Mode (1,000 PW required).");
+            return;
+          }
+          user.balance -= 1000;
+          localStorage.setItem('paywell_owned_ultra_ui', 'true');
+          window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+          alert("🎉 Ultra UI Mode Unlocked!");
+        } else {
+          return;
+        }
+      }
+    }
+
+    document.documentElement.setAttribute('data-ui-mode', mode);
+    localStorage.setItem('paywell_active_ui_mode', mode);
+    alert(`🎨 UI Appearance set to [${mode.toUpperCase()}] Mode!`);
+    if (window.PayWellAuth.currentUser) {
+      this.fetchUserFreshData();
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
+    }
   },
 
   toggleTheme() {
