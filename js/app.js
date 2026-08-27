@@ -13,8 +13,103 @@ const PayWellApp = {
     window.PayWellOwner.init();
     if (window.PayWellPet) window.PayWellPet.init();
 
+    this.checkURLReferralCoupon();
     this.bindEvents();
     this.renderCurrentState();
+  },
+
+  checkURLReferralCoupon() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      const regRefInput = document.getElementById('reg-ref-coupon');
+      if (regRefInput) {
+        regRefInput.value = refCode;
+      }
+      const activeCouponDisplay = document.getElementById('active-ref-coupon-display');
+      if (activeCouponDisplay) {
+        activeCouponDisplay.style.display = 'block';
+        activeCouponDisplay.innerText = `🎫 Active Referral Coupon: ${refCode} (Bonus Unlocked on Register!)`;
+      }
+    }
+  },
+
+  openReferralModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    window.PayWellRouter.openModal('modal-referral');
+    this.renderReferralDetails();
+  },
+
+  renderReferralDetails() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const stats = window.PayWellDB.getReferralStats(user.username);
+    const linkInput = document.getElementById('ref-link-input');
+    const countEl = document.getElementById('ref-friend-count');
+    const earnedEl = document.getElementById('ref-earned-pw');
+
+    const botLink = `https://t.me/PayWellBot?ref=${user.username}`;
+    if (linkInput) linkInput.value = botLink;
+    if (countEl) countEl.innerText = `${stats.count} Friends`;
+    if (earnedEl) earnedEl.innerText = `${stats.totalEarned} PW`;
+
+    const milestones = [
+      { friends: 2, reward: 3 },
+      { friends: 5, reward: 10 },
+      { friends: 10, reward: 25 },
+      { friends: 25, reward: 75 },
+      { friends: 50, reward: 200 },
+      { friends: 100, reward: 500 }
+    ];
+
+    const listContainer = document.getElementById('ref-milestones-list');
+    if (listContainer) {
+      listContainer.innerHTML = milestones.map(m => {
+        const isClaimed = (stats.claimed || []).includes(m.friends);
+        const canClaim = stats.count >= m.friends && !isClaimed;
+
+        return `
+          <div class="glass-card" style="padding:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; color:#fff; font-size:12px;">👥 Invite ${m.friends} Friends ➔ ${m.reward} PW</div>
+              <div style="font-size:10px; color:var(--text-muted);">Progress: ${Math.min(stats.count, m.friends)}/${m.friends}</div>
+            </div>
+            ${isClaimed
+              ? `<span style="font-size:11px; color:var(--primary-green); font-weight:700;">✓ Claimed</span>`
+              : `<button onclick="PayWellApp.claimReferralMilestone(${m.friends}, ${m.reward})" class="btn ${canClaim ? 'btn-gold' : 'btn-glass'}" style="width:auto; padding:4px 8px; font-size:10px;" ${canClaim ? '' : 'disabled'}>
+                  ${canClaim ? 'Claim Bonus' : 'Locked'}
+                </button>`
+            }
+          </div>
+        `;
+      }).join('');
+    }
+  },
+
+  claimReferralMilestone(friends, reward) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    try {
+      window.PayWellDB.claimReferralMilestone(user.username, friends, reward);
+      alert(`🎉 Claimed +${reward} PW Referral Milestone Bonus!`);
+      this.fetchUserFreshData();
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
+      this.renderReferralDetails();
+    } catch (e) {
+      alert(e.message || "Claim failed.");
+    }
+  },
+
+  copyReferralLink() {
+    const linkInput = document.getElementById('ref-link-input');
+    if (linkInput) {
+      navigator.clipboard.writeText(linkInput.value);
+      alert("📋 Referral Bot Link copied to clipboard!");
+    }
   },
 
   bindEvents() {
@@ -55,10 +150,16 @@ const PayWellApp = {
       regForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('reg-username').value.trim();
+        const nickname = document.getElementById('reg-nickname')?.value?.trim();
         const email = document.getElementById('reg-email').value.trim();
+        const refCoupon = document.getElementById('reg-ref-coupon')?.value?.trim();
         const pwd = document.getElementById('reg-pwd').value;
         try {
-          await window.PayWellAuth.register(username, email, pwd);
+          const user = await window.PayWellAuth.register(username, email, pwd);
+          if (user) {
+            if (nickname) window.PayWellDB.updateUserProfile(username, nickname, undefined, undefined);
+            if (refCoupon) window.PayWellDB.registerReferral(refCoupon, username);
+          }
           window.PayWellRouter.closeModal('modal-auth');
         } catch (err) {
           alert(err.message || "Registration failed");
@@ -106,13 +207,17 @@ const PayWellApp = {
   renderHeader(user) {
     const headerUser = document.getElementById('header-username');
     const lvl = window.PayWellDB.getUserLevel(user.username);
+    const displayName = user.nickname || user.username;
+
     if (headerUser) {
-      headerUser.innerText = `@${user.username} (Lvl ${lvl}) ${user.role === 'owner' ? '👑' : ''}`;
+      headerUser.innerText = `${displayName} (@${user.username}) ${user.role === 'owner' ? '👑' : ''}`;
     }
     const headerId = document.getElementById('header-user-id');
     if (headerId) {
       headerId.innerText = `#PW-${String(user.id || 1).padStart(4, '0')}`;
     }
+
+    // Render Full Profile Area
     const profileSeqId = document.getElementById('profile-seq-id');
     if (profileSeqId) {
       profileSeqId.innerText = `#PW-${String(user.id || 1).padStart(4, '0')}`;
@@ -121,6 +226,123 @@ const PayWellApp = {
     if (profileLvlEl) {
       profileLvlEl.innerText = `Level ${lvl}`;
     }
+
+    const nameDisplay = document.getElementById('profile-name-display');
+    if (nameDisplay) {
+      nameDisplay.innerText = user.nickname ? `${user.nickname} (@${user.username})` : `@${user.username}`;
+    }
+
+    const bioDisplay = document.getElementById('profile-bio-display');
+    if (bioDisplay) {
+      bioDisplay.innerText = user.bio ? `"${user.bio}"` : 'Tap to add bio/description...';
+    }
+
+    const avatarBox = document.getElementById('profile-avatar-box');
+    if (avatarBox) {
+      if (user.profile_photo) {
+        avatarBox.style.backgroundImage = `url(${user.profile_photo})`;
+        avatarBox.style.backgroundSize = 'cover';
+        avatarBox.style.backgroundPosition = 'center';
+        avatarBox.innerText = '';
+      } else {
+        avatarBox.style.backgroundImage = 'none';
+        avatarBox.innerText = '👤';
+      }
+    }
+
+    // Top PFT Display Area
+    this.renderTopPFTDisplay(user.username);
+  },
+
+  renderTopPFTDisplay(username) {
+    const container = document.getElementById('pft-top-display-area');
+    if (!container) return;
+
+    const pfts = window.PayWellDB.getEquippedPFTs(username);
+    if (pfts.length === 0) {
+      container.innerHTML = `<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">✨ Equipped PFT collectibles show here!</div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; padding:6px;">
+        ${pfts.map(p => `
+          <div class="glass-card" style="padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:4px; border:1px solid var(--gold-accent); background:rgba(255,215,0,0.1);">
+            <span>${p.icon || '🪙'}</span>
+            <span style="font-weight:700; color:var(--gold-accent);">${p.name || 'PFT Item'}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
+
+  handleProfilePhotoUpload(file) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user || !file) return;
+
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+      alert("Invalid image format! Only PNG and JPG photos are supported.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Photo max size is 5MB!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      window.PayWellDB.updateUserProfile(user.username, undefined, undefined, e.target.result);
+      alert("📸 Profile photo updated successfully!");
+      this.fetchUserFreshData();
+      this.renderHeader(window.PayWellAuth.currentUser);
+    };
+    reader.readAsDataURL(file);
+  },
+
+  openEditNicknameModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+    const input = document.getElementById('edit-nickname-input');
+    if (input) input.value = user.nickname || '';
+    window.PayWellRouter.openModal('modal-edit-nickname');
+  },
+
+  submitNicknameChange() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const nickname = document.getElementById('edit-nickname-input')?.value?.trim();
+    if (!nickname) {
+      alert("Please enter a nickname!");
+      return;
+    }
+
+    window.PayWellDB.updateUserProfile(user.username, nickname, undefined, undefined);
+    alert("✨ Nickname updated successfully!");
+    window.PayWellRouter.closeModal('modal-edit-nickname');
+    this.fetchUserFreshData();
+    this.renderHeader(window.PayWellAuth.currentUser);
+  },
+
+  openEditBioModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+    const input = document.getElementById('edit-bio-input');
+    if (input) input.value = user.bio || '';
+    window.PayWellRouter.openModal('modal-edit-bio');
+  },
+
+  submitBioChange() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const bio = document.getElementById('edit-bio-input')?.value?.trim();
+    window.PayWellDB.updateUserProfile(user.username, undefined, bio, undefined);
+    alert("📝 Bio updated successfully!");
+    window.PayWellRouter.closeModal('modal-edit-bio');
+    this.fetchUserFreshData();
+    this.renderHeader(window.PayWellAuth.currentUser);
   },
 
   openLevelPassModal() {
@@ -508,21 +730,48 @@ const PayWellApp = {
     if (fullContainer) fullContainer.innerHTML = txs.map(renderTxCard).join('');
   },
 
+  activeStoreCategory: 'ALL',
+
+  filterStoreCategory(cat) {
+    this.activeStoreCategory = cat;
+    ['ALL', 'PFT', 'Pet', 'Profile', 'Gift Cards', 'Level Pass', 'Blind Box', 'Other'].forEach(c => {
+      const btn = document.getElementById(`store-cat-${c.replace(/\s+/g, '')}`);
+      if (btn) btn.className = c === cat ? 'btn btn-primary' : 'btn btn-glass';
+    });
+    this.loadStoreItems();
+  },
+
   loadStoreItems() {
-    const items = window.PayWellDB.getStoreItems();
     const container = document.getElementById('store-grid');
     if (!container) return;
 
+    const query = (document.getElementById('store-search-input')?.value || '').toLowerCase().trim();
+    let items = window.PayWellDB.getStoreItems();
+
+    if (this.activeStoreCategory !== 'ALL') {
+      items = items.filter(i => i.category === this.activeStoreCategory);
+    }
+
+    if (query) {
+      items = items.filter(i => i.name.toLowerCase().includes(query) || i.description.toLowerCase().includes(query));
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">No store items found in category "${this.activeStoreCategory}".</div>`;
+      return;
+    }
+
     container.innerHTML = items.map(item => `
-      <div class="glass-card" style="padding:16px; text-align:center; position:relative;">
-        <div style="font-size:36px; margin-bottom:8px;">${item.image_url}</div>
-        <div style="font-weight:700; font-size:15px; color:var(--text-primary); margin-bottom:4px;">${item.name}</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px; height:36px; overflow:hidden;">${item.description}</div>
-        <div style="font-family:var(--font-mono); font-weight:800; color:var(--gold-accent); font-size:16px; margin-bottom:12px;">
-          ${item.price.toFixed(2)} PW
+      <div class="glass-card" style="padding:10px; text-align:center; position:relative; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="font-size:28px; margin-bottom:4px;">${item.image_url}</div>
+          <div style="font-weight:700; font-size:11px; color:var(--text-primary); margin-bottom:2px; height:28px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${item.name}</div>
+          <div style="font-family:var(--font-mono); font-weight:800; color:var(--gold-accent); font-size:12px; margin-bottom:6px;">
+            ${item.price.toLocaleString()} PW
+          </div>
         </div>
-        <button onclick="PayWellApp.buyStoreItem(${item.id})" class="btn btn-primary" style="padding:10px; font-size:13px;">
-          ${window.PayWellI18n.t('buyNow')}
+        <button onclick="PayWellApp.buyStoreItem(${item.id})" class="btn ${item.category === 'Blind Box' ? 'btn-gold' : 'btn-primary'}" style="padding:4px 6px; font-size:10px; min-height:30px; height:30px;">
+          ${item.category === 'Blind Box' ? '🔮 Open Box' : 'Buy Now'}
         </button>
       </div>
     `).join('');
@@ -534,12 +783,49 @@ const PayWellApp = {
 
     try {
       const res = window.PayWellDB.buyStoreItem(user.username, itemId);
-      alert(`🎉 Purchased ${res.item.name} successfully!`);
+
+      if (res.item.category === 'Blind Box') {
+        const boxType = res.item.boxType || 'common';
+        const droppedPFT = window.PayWellDB.openBlindBox(user.username, boxType);
+        this.triggerBlindBoxAnimation(res.item.name, droppedPFT);
+      } else {
+        alert(`🎉 Purchased ${res.item.name} successfully!`);
+      }
+
       this.fetchUserFreshData();
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
       this.loadRecentTransactions(user.username);
     } catch (e) {
       alert(e.message || "Purchase failed.");
     }
+  },
+
+  triggerBlindBoxAnimation(boxName, droppedPFT) {
+    window.PayWellRouter.openModal('modal-blindbox-unbox');
+    const titleEl = document.getElementById('unbox-box-title');
+    const iconEl = document.getElementById('unbox-icon-display');
+    const resultBox = document.getElementById('unbox-result-box');
+
+    if (titleEl) titleEl.innerText = `🔮 Opening ${boxName}...`;
+    if (iconEl) {
+      iconEl.innerText = '📦';
+      iconEl.className = 'animate-shake';
+    }
+    if (resultBox) resultBox.style.display = 'none';
+
+    setTimeout(() => {
+      if (iconEl) {
+        iconEl.innerText = droppedPFT.icon || '✨';
+        iconEl.className = 'animate-pulse-glow';
+      }
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = `
+          <div style="font-weight:800; font-size:16px; color:var(--gold-accent);">🎉 UNBOXED: ${droppedPFT.name}!</div>
+          <div style="font-size:11px; color:var(--primary-green); margin-top:4px;">Equipped to your Top Profile PFT Display!</div>
+        `;
+      }
+    }, 1500);
   },
 
   submitSendMoney() {

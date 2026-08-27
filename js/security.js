@@ -115,6 +115,45 @@ const PayWellAuth = {
   async verifyOwnerPin(pin) {
     if (!this.isOwner()) return false;
     return pin === "201171";
+  },
+
+  checkPasswordStrength(password) {
+    let score = 0;
+    if (!password) return { score: 0, text: 'Weak', color: '#FF5252' };
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) return { score: score, text: 'Weak', color: '#FF5252' };
+    if (score <= 4) return { score: score, text: 'Medium', color: '#FFD700' };
+    return { score: score, text: 'Strong', color: '#00E676' };
+  },
+
+  loginWithGoogle() {
+    const username = `google_user_${Math.floor(100 + Math.random() * 900)}`;
+    let user = window.PayWellDB.findUser(username);
+    if (!user) {
+      user = window.PayWellDB.registerUser(username, `${username}@gmail.com`, 'GoogleOAuth2024!', null);
+    }
+    this.setUser(user);
+    alert(`🌐 Logged in with Google Account (@${username})!`);
+  },
+
+  loginWithTelegram() {
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+      this.autoLoginTelegram(tgUser);
+    } else {
+      const username = `tg_user_${Math.floor(100 + Math.random() * 900)}`;
+      let user = window.PayWellDB.findUser(username);
+      if (!user) {
+        user = window.PayWellDB.registerUser(username, `${username}@telegram.org`, 'TgPass123!', '6399210935');
+      }
+      this.setUser(user);
+      alert(`✈️ Logged in with Telegram Profile (@${username})!`);
+    }
   }
 };
 

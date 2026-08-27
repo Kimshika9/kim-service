@@ -79,13 +79,13 @@
           </div>
         </div>
 
-        <!-- Daily Reward & Quest Banner -->
-        <div class="glass-card" style="padding:14px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <!-- Referral Program Banner -->
+        <div class="glass-card glass-card-gold" style="padding:14px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight:700; font-size:13px; color:var(--gold-accent);">🎁 Daily Login Reward & Quests</div>
-            <div style="font-size:11px; color:var(--text-muted);">Streak: <b id="daily-streak-count" style="color:#fff;">3 Days</b> (+50 PW Daily)</div>
+            <div style="font-weight:700; font-size:13px; color:var(--gold-accent);">👥 Referral Program • Earn PW</div>
+            <div style="font-size:11px; color:var(--text-muted);">Invite friends and unlock up to <b style="color:var(--primary-green);">500 PW</b> bonuses!</div>
           </div>
-          <button onclick="PayWellApp.claimDailyReward()" class="btn btn-gold" style="padding:6px 12px; font-size:11px; width:auto;">Claim Reward</button>
+          <button onclick="PayWellApp.openReferralModal()" class="btn btn-gold" style="padding:6px 12px; font-size:11px; width:auto;">Invite Friends</button>
         </div>
 
         <!-- Pet & Savings Quick Bar -->
@@ -130,15 +130,28 @@
 
       <!-- 3. STORE & AUCTION MARKET VIEW -->
       <section id="view-store" class="app-view" style="display:none;">
-        <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <h2 data-i18n="communityStore">Store & Marketplace</h2>
-            <div style="font-size:11px; color:var(--text-muted);">NEXORA Tokens, PFT Auctions & Items</div>
+            <div style="font-size:10px; color:var(--text-muted);">100+ Catalog Items • PFT Blind Boxes & Pets</div>
           </div>
-          <button onclick="PayWellRouter.openModal('modal-pft-auctions')" class="btn btn-gold" style="padding:6px 10px; font-size:11px; width:auto;">🔨 PFT Auctions</button>
+          <button onclick="PayWellRouter.openModal('modal-pft-auctions')" class="btn btn-gold" style="padding:4px 8px; font-size:10px; width:auto;">🔨 Auctions</button>
         </div>
 
-        <div id="store-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;"></div>
+        <input type="text" id="store-search-input" onkeyup="PayWellApp.loadStoreItems()" class="form-input" style="font-size:11px; padding:6px 10px; margin-bottom:8px;" placeholder="🔍 Search 100+ store items, PFTs, pets, gift cards...">
+
+        <div style="display:flex; gap:4px; overflow-x:auto; margin-bottom:10px; padding-bottom:4px;">
+          <button id="store-cat-ALL" onclick="PayWellApp.filterStoreCategory('ALL')" class="btn btn-primary" style="padding:4px 8px; font-size:9px; white-space:nowrap;">All (100+)</button>
+          <button id="store-cat-PFT" onclick="PayWellApp.filterStoreCategory('PFT')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">PFTs (30)</button>
+          <button id="store-cat-Pet" onclick="PayWellApp.filterStoreCategory('Pet')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Pets (15)</button>
+          <button id="store-cat-Profile" onclick="PayWellApp.filterStoreCategory('Profile')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Profile (25)</button>
+          <button id="store-cat-GiftCards" onclick="PayWellApp.filterStoreCategory('Gift Cards')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Gift Cards</button>
+          <button id="store-cat-LevelPass" onclick="PayWellApp.filterStoreCategory('Level Pass')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Level Pass</button>
+          <button id="store-cat-BlindBox" onclick="PayWellApp.filterStoreCategory('Blind Box')" class="btn btn-gold" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Blind Box</button>
+          <button id="store-cat-Other" onclick="PayWellApp.filterStoreCategory('Other')" class="btn btn-glass" style="padding:4px 8px; font-size:9px; white-space:nowrap;">Other</button>
+        </div>
+
+        <div id="store-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;"></div>
       </section>
 
       <!-- 4. PROFILE & DECORATIONS VIEW -->
@@ -151,15 +164,30 @@
           </div>
         </div>
 
+        <!-- Top PFT Display Area -->
+        <div id="pft-top-display-area" class="glass-card" style="margin-bottom:12px; min-height:36px;"></div>
+
         <div id="user-profile-card" class="glass-card" style="padding:20px; margin-bottom:16px; position:relative; background:linear-gradient(135deg, #0f0c29, #302b63, #24243e);">
           <div style="display:flex; gap:16px; align-items:center;">
-            <div id="profile-avatar-box" style="position:relative; width:64px; height:64px; border-radius:50%; border:2px solid var(--primary-green); display:flex; align-items:center; justify-content:center; background:#12121A; font-size:28px;">
+            <div id="profile-avatar-box" onclick="document.getElementById('profile-photo-file').click()" style="position:relative; width:68px; height:68px; border-radius:50%; border:2px solid var(--primary-green); display:flex; align-items:center; justify-content:center; background:#12121A; font-size:28px; cursor:pointer;" title="Tap to Upload Photo (PNG/JPG)">
               👤
               <div id="profile-frame-overlay" class="frame-gold" style="position:absolute; inset:-6px; pointer-events:none; border-radius:50%;"></div>
             </div>
+            <input type="file" id="profile-photo-file" accept="image/png, image/jpeg" style="display:none;" onchange="PayWellApp.handleProfilePhotoUpload(this.files[0])">
+
             <div>
-              <div id="profile-name-display" style="font-weight:700; font-size:18px; color:#fff; text-shadow:0 0 8px #00E676;">@User</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div id="profile-name-display" style="font-weight:700; font-size:18px; color:#fff; text-shadow:0 0 8px #00E676;">@User</div>
+                <button onclick="PayWellApp.openEditNicknameModal()" class="btn btn-glass btn-icon-only" style="width:24px; height:24px; font-size:10px;" title="Edit Nickname">✏️</button>
+              </div>
+
               <div style="font-size:11px; color:var(--gold-accent);">Sequential User ID: <span id="profile-seq-id">#PW-0001</span> | <span id="profile-level-badge" style="color:var(--primary-green); font-weight:700;">Level 1</span></div>
+
+              <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                <div id="profile-bio-display" style="font-size:11px; color:var(--text-muted); font-style:italic;">Tap to add bio...</div>
+                <button onclick="PayWellApp.openEditBioModal()" class="btn btn-glass btn-icon-only" style="width:20px; height:20px; font-size:9px;" title="Edit Bio">✏️</button>
+              </div>
+
               <div id="profile-badges-container" style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
                 <span style="font-size:14px;">👑</span>
                 <span style="font-size:14px;">💎</span>
@@ -196,7 +224,58 @@
         <button onclick="PayWellAuth.logout()" class="btn btn-danger" data-i18n="logout">Log Out</button>
       </section>
 
-      <!-- 5. OWNER CROWN VIEW (Restricted to Owner ID 6399210935 / @Yuji_luke) -->
+      <!-- 5. FULL-PAGE MORE MENU VIEW -->
+      <section id="view-more" class="app-view" style="display:none;">
+        <div style="margin-bottom:16px;">
+          <h2 style="color:var(--primary-green);">⋯ PayWell More Menu</h2>
+          <div style="font-size:11px; color:var(--text-muted);">Ecosystem Services, Features & Settings</div>
+        </div>
+
+        <!-- ACCOUNT SECTION -->
+        <div class="glass-card" style="padding:14px; margin-bottom:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--gold-accent); text-transform:uppercase; margin-bottom:8px;">ACCOUNT</div>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+            <button onclick="PayWellApp.openEditNicknameModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">✏️ Change Nickname</button>
+            <button onclick="PayWellApp.openEditBioModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">📝 Edit Bio</button>
+            <button onclick="PayWellApp.openProfileIDCardModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🪪 Digital ID Card</button>
+            <button onclick="PayWellRouter.openModal('modal-settings')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">⚙️ Settings</button>
+          </div>
+        </div>
+
+        <!-- FEATURES SECTION -->
+        <div class="glass-card" style="padding:14px; margin-bottom:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--primary-green); text-transform:uppercase; margin-bottom:8px;">FEATURES</div>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+            <button onclick="PayWellApp.openVisaModal()" class="btn btn-gold" style="justify-content:flex-start; font-size:11px;">💳 PayWell Visa</button>
+            <button onclick="PayWellRouter.openModal('modal-crypto-market'); PayWellCrypto.switchTab('market');" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">📈 Crypto Market</button>
+            <button onclick="PayWellMarket.openMarket()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🌍 Global Market</button>
+            <button onclick="PayWellP2P.openMarketModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🛒 P2P Seller System</button>
+            <button onclick="PayWellRouter.openModal('modal-pet-system')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🐲 Cyber Pet System</button>
+            <button onclick="PayWellRouter.openModal('modal-savings-vault')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🏦 Savings Vault</button>
+            <button onclick="PayWellRouter.openModal('modal-pft-auctions')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🔨 PFT Auctions</button>
+            <button onclick="PayWellApp.openGiftCardModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🎁 Gift Cards</button>
+            <button onclick="PayWellApp.openLevelPassModal()" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">⚡ Level System</button>
+            <button onclick="PayWellRouter.openModal('modal-referral')" class="btn btn-gold" style="justify-content:flex-start; font-size:11px;">👥 Referral Program</button>
+          </div>
+        </div>
+
+        <!-- SUPPORT & SETTINGS SECTION -->
+        <div class="glass-card" style="padding:14px; margin-bottom:12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--secondary-blue); text-transform:uppercase; margin-bottom:8px;">SUPPORT & SETTINGS</div>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+            <button onclick="PayWellRouter.openModal('modal-appearance')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">🎨 UI Appearance</button>
+            <button onclick="PayWellRouter.openModal('modal-user-report')" class="btn btn-danger" style="justify-content:flex-start; font-size:11px;">🚩 Security Report</button>
+            <a href="https://t.me/Yuji_luke" target="_blank" class="btn btn-gold" style="justify-content:flex-start; font-size:11px; text-decoration:none; text-align:left;">👑 Contact Owner</a>
+            <button onclick="PayWellRouter.openModal('modal-settings')" class="btn btn-glass" style="justify-content:flex-start; font-size:11px;">⚙️ Full Settings</button>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:10px; color:var(--text-muted); margin:12px 0;">
+          PayWell Ecosystem v6.0.0 • © 2024 PayWell System (@Yuji_luke)
+        </div>
+      </section>
+
+      <!-- 6. OWNER CROWN VIEW (Restricted to Owner ID 6399210935 / @Yuji_luke) -->
       <section id="view-crown" class="app-view" style="display:none;">
 
         <!-- PIN Protection Pad -->
@@ -320,7 +399,7 @@
         <span class="nav-icon">👤</span>
         <span>Profile</span>
       </a>
-      <a href="#" class="nav-item" onclick="PayWellRouter.openModal('modal-more-menu'); return false;" title="More">
+      <a href="#" class="nav-item" data-view="more" title="More">
         <span class="nav-icon">⋯</span>
         <span>More</span>
       </a>
@@ -353,7 +432,14 @@
           <button type="submit" class="btn btn-primary" style="margin-top:10px;">Sign In</button>
         </form>
 
-        <div style="text-align:center; margin:16px 0; font-size:12px; color:var(--text-muted);">OR</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:12px 0;">
+          <button onclick="PayWellAuth.loginWithTelegram()" class="btn btn-glass" style="font-size:10px; padding:6px;">✈️ Telegram</button>
+          <button onclick="PayWellAuth.loginWithGoogle()" class="btn btn-glass" style="font-size:10px; padding:6px;">🌐 Google</button>
+        </div>
+
+        <div style="text-align:center; margin:12px 0; font-size:11px; color:var(--text-muted);">─── OR CREATE ACCOUNT ───</div>
+
+        <div id="active-ref-coupon-display" style="display:none; padding:8px; background:rgba(0,230,118,0.15); color:var(--primary-green); font-size:11px; border-radius:8px; margin-bottom:12px; font-weight:700; text-align:center;"></div>
 
         <form id="form-register">
           <div class="form-group">
@@ -361,14 +447,31 @@
             <input type="text" id="reg-username" class="form-input" required placeholder="e.g. CommunityMember">
           </div>
           <div class="form-group">
-            <label class="form-label">Email Address (Optional)</label>
-            <input type="email" id="reg-email" class="form-input" placeholder="user@gmail.com">
+            <label class="form-label">Nickname (Optional)</label>
+            <input type="text" id="reg-nickname" class="form-input" placeholder="e.g. 🔥 Yuji Luxe">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="reg-email" class="form-input" required placeholder="user@gmail.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Referral Coupon Code (Optional)</label>
+            <input type="text" id="reg-ref-coupon" class="form-input" placeholder="e.g. Yuji_luke">
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input type="password" id="reg-pwd" class="form-input" required placeholder="••••••••">
+            <input type="password" id="reg-pwd" onkeyup="
+              const s = PayWellAuth.checkPasswordStrength(this.value);
+              const el = document.getElementById('pwd-strength-indicator');
+              if (el) { el.innerText = 'Strength: ' + s.text; el.style.color = s.color; }
+            " class="form-input" required placeholder="••••••••">
+            <div id="pwd-strength-indicator" style="font-size:10px; color:var(--text-muted); margin-top:2px;">Strength: Weak</div>
           </div>
-          <button type="submit" class="btn btn-glass">Create New Account</button>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:12px; font-size:11px; color:var(--text-muted);">
+            <input type="checkbox" required id="reg-terms-chk">
+            <label for="reg-terms-chk">I agree to Terms & Conditions (Age 13+)</label>
+          </div>
+          <button type="submit" class="btn btn-gold">Create New Account</button>
         </form>
       </div>
     </div>
@@ -470,6 +573,151 @@
           <button onclick="alert('🪪 ID Card Details Copied to Clipboard!');" class="btn btn-gold" style="padding:8px; font-size:11px;">Share ID Card</button>
           <button onclick="PayWellApp.openProfileCustomizerModal()" class="btn btn-glass" style="padding:8px; font-size:11px;">Edit Design</button>
         </div>
+      </div>
+    </div>
+
+    <!-- FULL SETTINGS MODAL -->
+    <div id="modal-settings" class="modal-overlay">
+      <div class="modal-content" style="max-width:480px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--primary-green);">⚙️ PayWell Full System Settings</h3>
+          <button onclick="PayWellRouter.closeModal('modal-settings')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; max-height:420px; overflow-y:auto; padding-right:4px;">
+
+          <!-- APPEARANCE -->
+          <div class="glass-card" style="padding:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--gold-accent); text-transform:uppercase; margin-bottom:6px;">APPEARANCE & THEME</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button onclick="PayWellRouter.closeModal('modal-settings'); PayWellRouter.openModal('modal-appearance');" class="btn btn-glass" style="font-size:10px; padding:6px;">🎨 UI Mode Selection</button>
+              <button onclick="PayWellApp.toggleTheme()" class="btn btn-glass" style="font-size:10px; padding:6px;">🌓 Toggle Light/Dark</button>
+            </div>
+          </div>
+
+          <!-- SECURITY -->
+          <div class="glass-card" style="padding:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--red-alert); text-transform:uppercase; margin-bottom:6px;">SECURITY & SESSIONS</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button onclick="alert('🔑 Security PIN setup is active. PIN required for transfers.')" class="btn btn-glass" style="font-size:10px; padding:6px;">🔐 Security PIN</button>
+              <button onclick="alert('📲 Active Session: 1 Device (Current Mini App Session)')" class="btn btn-glass" style="font-size:10px; padding:6px;">💻 Login Sessions</button>
+              <button onclick="alert('🛡️ 2FA via Telegram Bot is enabled.')" class="btn btn-glass" style="font-size:10px; padding:6px;">🛡️ 2FA Status</button>
+              <button onclick="alert('🔑 Passkey WebAuthn biometric login configured.')" class="btn btn-glass" style="font-size:10px; padding:6px;">🔑 Passkey Login</button>
+            </div>
+          </div>
+
+          <!-- THIRD PARTY CONNECTIONS -->
+          <div class="glass-card" style="padding:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--secondary-blue); text-transform:uppercase; margin-bottom:6px;">THIRD PARTY CONNECTIONS</div>
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:11px;">
+              <div style="display:flex; justify-content:space-between;"><span>Telegram Mini App</span><span style="color:var(--primary-green); font-weight:700;">✓ Connected</span></div>
+              <div style="display:flex; justify-content:space-between;"><span>Google OAuth 2.0</span><span style="color:var(--primary-green); font-weight:700;">✓ Connected</span></div>
+              <div style="display:flex; justify-content:space-between;"><span>KBZPay / WavePay</span><button onclick="alert('Kpay linked!')" class="btn btn-gold" style="width:auto; padding:2px 6px; font-size:9px;">Connect Kpay</button></div>
+            </div>
+          </div>
+
+          <!-- PRIVACY & NOTIFICATIONS -->
+          <div class="glass-card" style="padding:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--primary-green); text-transform:uppercase; margin-bottom:6px;">PRIVACY & NOTIFICATIONS</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button onclick="PayWellApp.toggleBalanceVisibility()" class="btn btn-glass" style="font-size:10px; padding:6px;">👁️ Balance Visibility</button>
+              <button onclick="alert('🔔 Transaction & Security alerts active via Telegram Bot.')" class="btn btn-glass" style="font-size:10px; padding:6px;">🔔 Bot Alerts</button>
+            </div>
+          </div>
+
+          <!-- DATA & CACHE -->
+          <div class="glass-card" style="padding:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">DATA MANAGEMENT</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button onclick="alert('📦 Account Data Exported to JSON!');" class="btn btn-glass" style="font-size:10px; padding:6px;">📦 Export Data</button>
+              <button onclick="alert('🧹 Local Cache Cleared!');" class="btn btn-glass" style="font-size:10px; padding:6px;">🧹 Clear Cache</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- REFERRAL PROGRAM MODAL -->
+    <div id="modal-referral" class="modal-overlay">
+      <div class="modal-content" style="max-width:460px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">👥 PayWell Referral Program</h3>
+          <button onclick="PayWellRouter.closeModal('modal-referral')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div class="glass-card glass-card-gold" style="padding:16px; margin-bottom:12px; text-align:center;">
+          <div style="font-size:10px; color:var(--text-muted);">YOUR REFERRAL LINK / COUPON CODE</div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <input type="text" id="ref-link-input" class="form-input" readonly style="font-size:11px; padding:6px;">
+            <button onclick="PayWellApp.copyReferralLink()" class="btn btn-gold" style="width:auto; padding:6px 12px; font-size:11px;">Copy Link</button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; text-align:center;">
+          <div class="glass-card" style="padding:10px;">
+            <div style="font-size:9px; color:var(--text-muted);">REFERRED FRIENDS</div>
+            <div id="ref-friend-count" class="font-heading" style="font-size:18px; font-weight:800; color:#fff;">0 Friends</div>
+          </div>
+          <div class="glass-card" style="padding:10px;">
+            <div style="font-size:9px; color:var(--text-muted);">EARNED REWARDS</div>
+            <div id="ref-earned-pw" class="font-mono" style="font-size:18px; font-weight:800; color:var(--primary-green);">0 PW</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px; font-weight:700; color:var(--gold-accent); margin-bottom:8px;">Milestone Bonus Rewards</div>
+        <div id="ref-milestones-list" style="max-height:220px; overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- EDIT NICKNAME MODAL -->
+    <div id="modal-edit-nickname" class="modal-overlay">
+      <div class="modal-content" style="max-width:420px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">✏️ Change Account Nickname</h3>
+          <button onclick="PayWellRouter.closeModal('modal-edit-nickname')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">New Nickname (Max 20 chars, Emojis allowed)</label>
+          <input type="text" id="edit-nickname-input" maxlength="20" class="form-input" style="font-size:12px;" placeholder="e.g. 🔥 Yuji Luxe 👑">
+        </div>
+
+        <button onclick="PayWellApp.submitNicknameChange()" class="btn btn-gold" style="padding:8px; font-size:11px;">Save Nickname</button>
+      </div>
+    </div>
+
+    <!-- PFT BLIND BOX UNBOXING ANIMATION MODAL -->
+    <div id="modal-blindbox-unbox" class="modal-overlay">
+      <div class="modal-content" style="max-width:420px; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 id="unbox-box-title" style="color:var(--gold-accent);">🔮 Opening Blind Box...</h3>
+          <button onclick="PayWellRouter.closeModal('modal-blindbox-unbox')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div style="padding:24px 0;">
+          <div id="unbox-icon-display" style="font-size:64px; margin-bottom:16px;">📦</div>
+          <div id="unbox-result-box" style="display:none;"></div>
+        </div>
+
+        <button onclick="PayWellRouter.closeModal('modal-blindbox-unbox')" class="btn btn-gold" style="padding:8px; font-size:11px;">Collect & Done</button>
+      </div>
+    </div>
+
+    <!-- EDIT BIO MODAL -->
+    <div id="modal-edit-bio" class="modal-overlay">
+      <div class="modal-content" style="max-width:420px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--primary-green);">📝 Edit Description / Bio</h3>
+          <button onclick="PayWellRouter.closeModal('modal-edit-bio')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Bio / Status Text (Max 100 chars)</label>
+          <textarea id="edit-bio-input" maxlength="100" class="form-input" style="font-size:11px; height:70px;" placeholder="Describe yourself or your trading preferences..."></textarea>
+        </div>
+
+        <button onclick="PayWellApp.submitBioChange()" class="btn btn-primary" style="padding:8px; font-size:11px;">Save Bio</button>
       </div>
     </div>
 

@@ -23,6 +23,7 @@ const PayWellDB = {
   STORAGE_GLOBAL_MARKET: 'paywell_db_global_market',
   STORAGE_VISA_CARDS: 'paywell_db_visa_cards',
   STORAGE_LEVEL_PASSES: 'paywell_db_level_passes',
+  STORAGE_REFERRALS: 'paywell_db_referrals',
 
   // All 20 Requested Cryptocurrencies
   CRYPTO_COINS: [
@@ -476,10 +477,166 @@ const PayWellDB = {
 
   getStoreItems() {
     try {
-      return JSON.parse(localStorage.getItem(this.STORAGE_STORE)) || [];
+      let items = JSON.parse(localStorage.getItem(this.STORAGE_STORE));
+      if (!items || items.length < 100) {
+        items = [];
+        let idCounter = 1;
+
+        // 1. PFT Items (30 Items)
+        const pftNames = ['Gold Dragon Emoji', 'Cyber Phoenix Emblem', 'Diamond Crown Badge', 'Neon Cyber Sword', 'Galaxy Portal', 'Fire Blast Symbol', 'Ice Crystal Shield', 'Lightning Bolt', 'Space Comet', 'Mystic Rune', 'Royal Seal', 'Cyberpunk Skull', 'Rainbow Star', 'Vip Key', 'Emerald Ring', 'Golden Clover', 'Titanium Helmet', 'Laser Gun', 'Alien Artifact', 'Quantum Core', 'Golden Coin', 'Plasma Orb', 'Sol Flare', 'Lunar Eclipse', 'Nebula Dust', 'Aether Feather', 'Chrono Watch', 'Starlight Crest', 'Void Mask', 'Infinity Stone'];
+        const pftIcons = ['🐉', '🦅', '👑', '⚔️', '🌀', '🔥', '🛡️', '⚡', '☄️', '🔮', '🏵️', '💀', '⭐', '🔑', '💍', '🍀', '🪖', '🔫', '🛸', '⚛️', '🪙', '🔮', '☀️', '🌙', '✨', '🪶', '⌚', '🎖️', '🎭', '💎'];
+        for (let i = 0; i < 30; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'PFT',
+            name: pftNames[i],
+            description: `Exclusive PFT collectible collectible #${i+1}`,
+            price: 100 + (i * 50),
+            stock: 100,
+            image_url: pftIcons[i]
+          });
+        }
+
+        // 2. Pet Items (15 Items)
+        const petNames = ['Cyber Dragon', 'Celestial Phoenix', 'Mystic Unicorn', 'Alpha Wolf', 'Nine-Tailed Fox', 'Shadow Cat', 'Cyber Dog', 'Golden Rabbit', 'Panda Monk', 'Bengal Tiger', 'Royal Lion', 'Eagle Sentinel', 'Mech Shark', 'T-Rex Dino', 'Galaxy Pegasus'];
+        const petIcons = ['🐲', '🦅', '🦄', '🐺', '🦊', '🐱', '🐶', '🐰', '🐼', '🐯', '🦁', '🦅', '🦈', '🦖', '🎠'];
+        for (let i = 0; i < 15; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Pet',
+            name: petNames[i],
+            description: `High XP companion pet with unique passive boosts`,
+            price: 500 + (i * 200),
+            stock: 50,
+            image_url: petIcons[i]
+          });
+        }
+
+        // 3. Profile Items (25 Items)
+        const profileNames = ['Neon City Background', 'Galaxy Stars BG', 'Ocean Wave BG', 'Cyber Frame Gold', 'Rainbow Aura Frame', 'Dragon Scale Frame', 'Fire Glow Effect', 'Ice Pulse Effect', 'VIP Crown Badge', 'Champion Crest', 'Diamond Aura', 'Gold Name Gradient', 'Neon Shimmer', 'Water Ripple', 'Crystal Name Glow', 'Shadow Phantom', 'Matrix Code BG', 'Aurora BG', 'Golden Halo', 'Phoenix Wings', 'Lightning Shield', 'Galaxy Ring', 'Cherry Blossom BG', 'Mountain Peak BG', 'Cosmic Portal BG'];
+        const profileIcons = ['🌆', '🌌', '🌊', '🖼️', '🌈', '🐲', '🔥', '❄️', '👑', '🏆', '💎', '✨', '⚡', '💧', '🔮', '👻', '🟩', '🌅', '😇', '🪶', '🛡️', '🪐', '🌸', '🏔️', '🪐'];
+        for (let i = 0; i < 25; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Profile',
+            name: profileNames[i],
+            description: `Custom profile decoration item for account flex`,
+            price: 150 + (i * 80),
+            stock: 200,
+            image_url: profileIcons[i]
+          });
+        }
+
+        // 4. Gift Cards (10 Items)
+        const gcNames = ['PW 100 Token Gift Card', 'PW 500 Token Gift Card', 'PW 1000 Token Gift Card', 'PW 5000 Token VIP Card', 'NEXORA One-Time Pass Card', 'NEXORA Monthly VIP Card', 'NEXORA Yearly Pass Card', 'Global Tournament Entry Card', 'Community Pet Gift Pass', 'VIP Gold Access Voucher'];
+        const gcIcons = ['🎁', '🎁', '🎁', '🎁', '🎫', '📅', '👑', '🏆', '🐾', '💳'];
+        const gcPrices = [100, 500, 1000, 5000, 500, 5000, 50000, 1000, 1500, 10000];
+        for (let i = 0; i < 10; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Gift Cards',
+            name: gcNames[i],
+            description: `Redeemable gift card voucher for recipient accounts`,
+            price: gcPrices[i],
+            stock: 999,
+            image_url: gcIcons[i]
+          });
+        }
+
+        // 5. Level Pass (5 Items)
+        const lpNames = ['Level 2 Instant Pass', 'Level 3 VIP Pass', 'Verified Seller Pass', 'P2P Merchant Pass', 'Ultimate Master Pass'];
+        const lpIcons = ['⚡', '🚀', '🏷️', '🛒', '👑'];
+        const lpPrices = [500, 2000, 1000, 1500, 10000];
+        for (let i = 0; i < 5; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Level Pass',
+            name: lpNames[i],
+            description: `Instantly bypass requirements and upgrade account level`,
+            price: lpPrices[i],
+            stock: 50,
+            image_url: lpIcons[i]
+          });
+        }
+
+        // 6. PFT Blind Box (5 Items)
+        const boxNames = ['Common PFT Box', 'Rare PFT Box', 'Epic PFT Box', 'Legendary PFT Box', 'Mythic PFT Box'];
+        const boxIcons = ['📦', '🎁', '🔮', '👑', '🌈'];
+        const boxPrices = [100, 500, 2000, 10000, 50000];
+        for (let i = 0; i < 5; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Blind Box',
+            name: boxNames[i],
+            description: `Contains guaranteed PFT collectible drop with unboxing animation`,
+            price: boxPrices[i],
+            stock: 999,
+            image_url: boxIcons[i],
+            boxType: boxNames[i].split(' ')[0].toLowerCase()
+          });
+        }
+
+        // 7. Other Items (10 Items)
+        const otherNames = ['Streak Freeze Shield', 'Transaction Fee Waiver', 'Global Trade Booster', 'Gold ID Card Badge', 'Double XP Pet Treat', 'P2P Escrow Insurance', 'Custom Nickname Color', 'VIP Lounge Pass', 'Priority Support Pin', 'Community Star Badge'];
+        const otherIcons = ['🛡️', '🧾', '🚀', '🪪', '🍖', '🔐', '🎨', '🍸', '📌', '🌟'];
+        for (let i = 0; i < 10; i++) {
+          items.push({
+            id: idCounter++,
+            category: 'Other',
+            name: otherNames[i],
+            description: `Special utility perk and system enhancement item`,
+            price: 200 + (i * 100),
+            stock: 100,
+            image_url: otherIcons[i]
+          });
+        }
+
+        localStorage.setItem(this.STORAGE_STORE, JSON.stringify(items));
+      }
+      return items;
     } catch (e) {
       return [];
     }
+  },
+
+  openBlindBox(username, boxType) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User not found");
+
+    const drops = {
+      common: [
+        { name: 'Common Gold Coin', icon: '🪙' },
+        { name: 'Common Bronze Badge', icon: '🥉' },
+        { name: 'Common Cyber Clover', icon: '🍀' }
+      ],
+      rare: [
+        { name: 'Rare Cyber Sword', icon: '⚔️' },
+        { name: 'Rare Silver Trophy', icon: '🥈' },
+        { name: 'Rare Crystal Orb', icon: '🔮' }
+      ],
+      epic: [
+        { name: 'Epic Phoenix Feather', icon: '🪶' },
+        { name: 'Epic Lightning Crown', icon: '⚡' },
+        { name: 'Epic Diamond Ring', icon: '💍' }
+      ],
+      legendary: [
+        { name: 'Legendary Gold Dragon Emblem', icon: '🐉' },
+        { name: 'Legendary VIP Crown', icon: '👑' },
+        { name: 'Legendary Infinity Gem', icon: '💎' }
+      ],
+      mythic: [
+        { name: 'Mythic Celestial Star', icon: '🌟' },
+        { name: 'Mythic Galaxy Core', icon: '🌌' },
+        { name: 'Mythic Rainbow Deity', icon: '🌈' }
+      ]
+    };
+
+    const dropList = drops[boxType.toLowerCase()] || drops.common;
+    const droppedPFT = dropList[Math.floor(Math.random() * dropList.length)];
+
+    this.equipPFT(username, droppedPFT);
+    return droppedPFT;
   },
 
   saveStoreItems(items) {
@@ -783,6 +940,40 @@ const PayWellDB = {
     return null;
   },
 
+  // --- USER PROFILE & NICKNAME / BIO / PHOTO ---
+  updateUserProfile(username, nickname, bio, profilePhoto) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) throw new Error("User not found");
+
+    if (nickname !== undefined) user.nickname = nickname.slice(0, 20);
+    if (bio !== undefined) user.bio = bio.slice(0, 100);
+    if (profilePhoto !== undefined) user.profile_photo = profilePhoto;
+
+    this.saveUsers(users);
+    return user;
+  },
+
+  getEquippedPFTs(username) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    return user ? (user.equipped_pfts || []) : [];
+  },
+
+  equipPFT(username, pft) {
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) return [];
+
+    if (!user.equipped_pfts) user.equipped_pfts = [];
+    if (user.equipped_pfts.length >= 5) {
+      user.equipped_pfts.shift(); // Max 5 PFTs equipped
+    }
+    user.equipped_pfts.push(pft);
+    this.saveUsers(users);
+    return user.equipped_pfts;
+  },
+
   // --- ACCOUNT LEVEL & LEVEL UP PASSES ---
   getUserLevel(username) {
     const users = this.getUsers();
@@ -828,6 +1019,58 @@ const PayWellDB = {
     this.addUserPassInventory(username, -1);
     const newLvl = this.setUserLevel(username, currLvl + 1);
     return newLvl;
+  },
+
+  // --- REFERRAL SYSTEM & MILESTONES ---
+  getReferralStats(username) {
+    try {
+      const data = JSON.parse(localStorage.getItem(this.STORAGE_REFERRALS)) || {};
+      const userRef = data[username.toLowerCase()] || { count: 0, friends: [], totalEarned: 0, claimed: [] };
+      return userRef;
+    } catch (e) {
+      return { count: 0, friends: [], totalEarned: 0, claimed: [] };
+    }
+  },
+
+  registerReferral(referrerUsername, newUsername) {
+    if (!referrerUsername || referrerUsername.toLowerCase() === newUsername.toLowerCase()) return;
+    const data = JSON.parse(localStorage.getItem(this.STORAGE_REFERRALS)) || {};
+    const refKey = referrerUsername.toLowerCase();
+    if (!data[refKey]) {
+      data[refKey] = { count: 0, friends: [], totalEarned: 0, claimed: [] };
+    }
+    if (!data[refKey].friends.includes(newUsername)) {
+      data[refKey].friends.push(newUsername);
+      data[refKey].count = data[refKey].friends.length;
+      localStorage.setItem(this.STORAGE_REFERRALS, JSON.stringify(data));
+    }
+  },
+
+  claimReferralMilestone(username, targetFriends, rewardPW) {
+    const data = JSON.parse(localStorage.getItem(this.STORAGE_REFERRALS)) || {};
+    const refKey = username.toLowerCase();
+    if (!data[refKey]) throw new Error("No referral history found!");
+
+    if (data[refKey].count < targetFriends) {
+      throw new Error(`Need ${targetFriends} referred friends! Current: ${data[refKey].count}`);
+    }
+
+    if (!data[refKey].claimed) data[refKey].claimed = [];
+    if (data[refKey].claimed.includes(targetFriends)) {
+      throw new Error("Milestone reward already claimed!");
+    }
+
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (user) {
+      user.balance += rewardPW;
+      this.saveUsers(users);
+    }
+
+    data[refKey].claimed.push(targetFriends);
+    data[refKey].totalEarned = (data[refKey].totalEarned || 0) + rewardPW;
+    localStorage.setItem(this.STORAGE_REFERRALS, JSON.stringify(data));
+    return rewardPW;
   },
 
   createP2POrder(buyerUsername, listingId, amount) {
