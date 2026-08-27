@@ -70,11 +70,94 @@ const PayWellOwner = {
     const users = window.PayWellDB.getUsers();
     const totalCirc = users.reduce((sum, u) => sum + u.balance, 0);
 
-    document.getElementById('owner-stat-users').innerText = users.length;
-    document.getElementById('owner-stat-circ').innerText = `${totalCirc.toLocaleString('en-US', {minimumFractionDigits: 2})} PW`;
-    document.getElementById('owner-stat-txs').innerText = (JSON.parse(localStorage.getItem(window.PayWellDB.STORAGE_TXS)) || []).length;
+    const usersEl = document.getElementById('owner-stat-users');
+    const circEl = document.getElementById('owner-stat-circ');
+    const txsEl = document.getElementById('owner-stat-txs');
+
+    if (usersEl) usersEl.innerText = users.length;
+    if (circEl) circEl.innerText = `${totalCirc.toLocaleString('en-US', {minimumFractionDigits: 2})} PW`;
+    if (txsEl) txsEl.innerText = (JSON.parse(localStorage.getItem(window.PayWellDB.STORAGE_TXS)) || []).length;
 
     this.loadUsersList();
+  },
+
+  openNexoraPriceModal() {
+    const prices = window.PayWellDB.getNexoraPrices();
+    const p1 = document.getElementById('nexora-price-1');
+    const p2 = document.getElementById('nexora-price-2');
+    const p3 = document.getElementById('nexora-price-3');
+    const p4 = document.getElementById('nexora-price-4');
+
+    if (p1) p1.value = prices.one_time;
+    if (p2) p2.value = prices.monthly;
+    if (p3) p3.value = prices.yearly;
+    if (p4) p4.value = prices.permanent;
+
+    window.PayWellRouter.openModal('modal-owner-nexora');
+  },
+
+  saveNexoraPrices() {
+    const prices = {
+      one_time: parseFloat(document.getElementById('nexora-price-1')?.value || 500),
+      monthly: parseFloat(document.getElementById('nexora-price-2')?.value || 5000),
+      yearly: parseFloat(document.getElementById('nexora-price-3')?.value || 50000),
+      permanent: parseFloat(document.getElementById('nexora-price-4')?.value || 500000)
+    };
+    window.PayWellDB.saveNexoraPrices(prices);
+    alert("👑 NEXORA Token prices updated successfully across the platform!");
+    window.PayWellRouter.closeModal('modal-owner-nexora');
+  },
+
+  openKpayRequestsModal() {
+    this.loadKpayRequests();
+    window.PayWellRouter.openModal('modal-owner-kpay');
+  },
+
+  loadKpayRequests() {
+    const deposits = window.PayWellDB.getKpayDeposits();
+    const container = document.getElementById('owner-kpay-list');
+    if (!container) return;
+
+    if (!deposits || deposits.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); padding:10px; font-size:12px;">No deposit requests found.</div>';
+      return;
+    }
+
+    container.innerHTML = deposits.map(d => `
+      <div class="glass-card" style="padding:12px; margin-bottom:8px; border:1px solid ${d.status === 'done' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
+        <div style="display:flex; justify-content:space-between; font-size:11px;">
+          <span style="font-weight:700; color:#fff;">${d.id}</span>
+          <span style="color:${d.status === 'done' ? 'var(--primary-green)' : 'var(--gold-accent)'}; font-weight:700;">[${d.status.toUpperCase()}]</span>
+        </div>
+        <div style="font-size:12px; color:#fff; margin:4px 0;">User: @${d.username} | Amount: ${d.amount_ks.toLocaleString()} KS</div>
+        <div style="font-size:10px; color:var(--text-muted);">Fee: ${d.fee_ks} KS | Account: ${d.kpay_no} | Date: ${d.created_at}</div>
+        ${d.status === 'pending' ? `
+          <button onclick="PayWellOwner.approveKpay('${d.id}')" class="btn btn-gold" style="margin-top:6px; padding:4px 8px; font-size:10px;">
+            ✓ Approve Deposit & Credit PW
+          </button>
+        ` : ''}
+      </div>
+    `).join('');
+  },
+
+  approveKpay(depositId) {
+    const res = window.PayWellDB.approveKpayDeposit(depositId);
+    if (res) {
+      alert(`✓ Deposit ${depositId} approved! Credited ${res.amount_ks} PW to @${res.username}.`);
+      this.loadKpayRequests();
+      this.loadOwnerDashboardData();
+    }
+  },
+
+  submitUserPenalty(level) {
+    const target = document.getElementById('mod-target-user')?.value;
+    const reason = prompt(`Enter reason for Penalty Level ${level}:`) || "Owner Policy Action";
+    if (!target) return;
+
+    window.PayWellDB.setUserPenalty(target, level, reason);
+    alert(`👑 Security Penalty Level ${level} applied to @${target}! Status updated.`);
+    window.PayWellRouter.closeModal('modal-owner-acct-modify');
+    this.loadOwnerDashboardData();
   },
 
   loadUsersList() {

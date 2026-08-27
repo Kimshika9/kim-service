@@ -9,6 +9,7 @@ const PayWellApp = {
     window.PayWellAuth.init();
     window.PayWellRouter.init();
     window.PayWellOwner.init();
+    if (window.PayWellPet) window.PayWellPet.init();
 
     this.bindEvents();
     this.renderCurrentState();
@@ -271,6 +272,96 @@ const PayWellApp = {
     } catch (err) {
       alert(err.message || "Transfer failed.");
     }
+  },
+
+  switchExchangeTab(tab) {
+    const pNew = document.getElementById('ex-panel-new');
+    const pOrders = document.getElementById('ex-panel-orders');
+    const btnNew = document.getElementById('ex-tab-new');
+    const btnOrders = document.getElementById('ex-tab-orders');
+
+    if (tab === 'new') {
+      if (pNew) pNew.style.display = 'block';
+      if (pOrders) pOrders.style.display = 'none';
+      if (btnNew) { btnNew.className = 'btn btn-gold'; }
+      if (btnOrders) { btnOrders.className = 'btn btn-glass'; }
+    } else {
+      if (pNew) pNew.style.display = 'none';
+      if (pOrders) pOrders.style.display = 'block';
+      if (btnNew) { btnNew.className = 'btn btn-glass'; }
+      if (btnOrders) { btnOrders.className = 'btn btn-gold'; }
+      this.loadExchangeOrders();
+    }
+  },
+
+  calcExchangeFee() {
+    const amt = parseFloat(document.getElementById('ex-amt-input')?.value || 0);
+    const feeEl = document.getElementById('ex-calculated-fee');
+    if (!feeEl) return;
+
+    if (amt <= 0) {
+      feeEl.innerText = "100 KS";
+      return;
+    }
+
+    const randomFee = Math.floor(Math.random() * 900) + 100; // 100-999 KS fee
+    feeEl.innerText = `${randomFee} KS`;
+  },
+
+  submitExchangeRequest() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const type = document.getElementById('ex-type-select').value;
+    const amount = parseFloat(document.getElementById('ex-amt-input').value || 0);
+    const acct = document.getElementById('ex-acct-input').value.trim();
+
+    if (amount <= 0 || !acct) {
+      alert("Please enter a valid exchange amount and account details.");
+      return;
+    }
+
+    if (type === 'deposit') {
+      const dep = window.PayWellDB.submitKpayDeposit(user.username, amount, 'simulated_proof.jpg');
+      alert(`✓ Kpay Deposit Request #${dep.id} submitted!\nSend ${amount.toLocaleString()} KS to Official Account 09763458034 (DMTD).\nOwner will approve and credit PW balance.`);
+    } else {
+      if (user.balance < amount) {
+        alert("Insufficient PW balance for withdrawal.");
+        return;
+      }
+      user.balance -= amount;
+      window.PayWellDB.saveUsers(window.PayWellDB.getUsers());
+      alert(`✓ Kpay Withdrawal Request submitted!\n${amount} PW deducted. Owner will send ${amount.toLocaleString()} KS to ${acct}.`);
+      this.fetchUserFreshData();
+      this.renderDashboardBalance(window.PayWellAuth.currentUser);
+    }
+
+    this.switchExchangeTab('orders');
+  },
+
+  loadExchangeOrders() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const deposits = window.PayWellDB.getKpayDeposits().filter(d => d.username.toLowerCase() === user.username.toLowerCase());
+    const container = document.getElementById('ex-orders-list');
+    if (!container) return;
+
+    if (!deposits || deposits.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); padding:12px; font-size:12px;">No active or past exchange orders.</div>';
+      return;
+    }
+
+    container.innerHTML = deposits.map(d => `
+      <div class="glass-card" style="padding:10px; margin-bottom:6px; border:1px solid ${d.status === 'done' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
+        <div style="display:flex; justify-content:space-between; font-size:11px;">
+          <span style="font-weight:700; color:#fff;">${d.id}</span>
+          <span style="color:${d.status === 'done' ? 'var(--primary-green)' : 'var(--gold-accent)'}; font-weight:700;">${d.status.toUpperCase()}</span>
+        </div>
+        <div style="font-size:12px; color:#fff; margin:2px 0;">Amount: ${d.amount_ks.toLocaleString()} KS / PW</div>
+        <div style="font-size:9px; color:var(--text-muted);">Fee: ${d.fee_ks} KS | ${d.created_at}</div>
+      </div>
+    `).join('');
   },
 
   executeEmergencyFill() {

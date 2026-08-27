@@ -18,6 +18,9 @@
 </head>
 <body>
 
+  <!-- Floating Pet Corner Widget -->
+  <div id="floating-pet-corner" style="position:fixed; top:68px; right:12px; z-index:99; display:none;"></div>
+
   <div id="app">
 
     <!-- Top Sticky Header Bar -->
@@ -208,37 +211,63 @@
           </div>
         </div>
 
-        <!-- Owner Unlocked Control Panel -->
+        <!-- Owner Unlocked Control Panel (Futuristic Cockpit Deck) -->
         <div id="owner-dashboard-content" style="display:none;">
-          <div class="glass-card glass-card-gold" style="padding:20px; margin-bottom:16px;">
+          <div class="glass-card glass-card-gold" style="padding:16px; margin-bottom:16px; border:1px solid var(--gold-accent);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h3 style="color:var(--gold-accent);">👑 System Control Center</h3>
-              <span style="font-size:11px; background:rgba(255,215,0,0.2); color:var(--gold-accent); padding:2px 8px; border-radius:10px;">@Yuji_luke</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px;">🛸</span>
+                <div>
+                  <h3 style="color:var(--gold-accent); font-size:15px; margin:0;">Owner Cockpit Panel</h3>
+                  <div style="font-size:9px; color:var(--text-muted);">System Controls • @Yuji_luke</div>
+                </div>
+              </div>
+              <button onclick="PayWellRouter.openModal('modal-owner-pet-create')" class="btn btn-gold" style="width:auto; padding:4px 8px; font-size:10px;">🐾 Create Pet</button>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; margin-bottom:12px;">
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
-                <div style="font-size:10px; color:var(--text-muted);">Users</div>
-                <div id="owner-stat-users" class="font-mono" style="font-weight:700; color:var(--text-primary);">0</div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center; margin-bottom:12px;">
+              <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid var(--border-glass);">
+                <div style="font-size:9px; color:var(--text-muted);">USERS</div>
+                <div id="owner-stat-users" class="font-mono" style="font-weight:800; color:#fff; font-size:13px;">0</div>
               </div>
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
-                <div style="font-size:10px; color:var(--text-muted);">Circulation</div>
-                <div id="owner-stat-circ" class="font-mono" style="font-weight:700; color:var(--gold-accent); font-size:11px;">0.00 PW</div>
+              <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid var(--border-glass);">
+                <div style="font-size:9px; color:var(--text-muted);">PW CIRCULATION</div>
+                <div id="owner-stat-circ" class="font-mono" style="font-weight:800; color:var(--gold-accent); font-size:11px;">0.00 PW</div>
               </div>
-              <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;">
-                <div style="font-size:10px; color:var(--text-muted);">Transactions</div>
-                <div id="owner-stat-txs" class="font-mono" style="font-weight:700; color:var(--primary-green);">0</div>
+              <div style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; border:1px solid var(--border-glass);">
+                <div style="font-size:9px; color:var(--text-muted);">TOTAL TXS</div>
+                <div id="owner-stat-txs" class="font-mono" style="font-weight:800; color:var(--primary-green); font-size:13px;">0</div>
               </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
-              <button onclick="PayWellOwner.openFeeBoxModal()" class="btn btn-gold" style="font-size:11px;">📦 Fee Box Deck</button>
-              <button onclick="PayWellOwner.openDisputesModal()" class="btn btn-glass" style="font-size:11px;">⚖️ Disputes Deck</button>
+            <!-- Cockpit Icon Control Buttons -->
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:10px;">
+              <button onclick="PayWellOwner.openFeeBoxModal()" class="btn btn-gold" style="padding:8px 4px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:2px;" title="Fee Box Revenue">
+                <span style="font-size:16px;">📦</span> Fee Box
+              </button>
+              <button onclick="PayWellOwner.openDisputesModal()" class="btn btn-glass" style="padding:8px 4px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:2px;" title="Compliance Reports">
+                <span style="font-size:16px;">⚖️</span> Disputes
+              </button>
+              <button onclick="PayWellOwner.openNexoraPriceModal()" class="btn btn-glass" style="padding:8px 4px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:2px;" title="Token Prices">
+                <span style="font-size:16px;">🎫</span> Tokens
+              </button>
+              <button onclick="PayWellOwner.openKpayRequestsModal()" class="btn btn-glass" style="padding:8px 4px; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:2px;" title="Kpay Deposits">
+                <span style="font-size:16px;">📲</span> Kpay Requests
+              </button>
+            </div>
+
+            <!-- Cockpit Sliders & Dynamic Controls -->
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; border:1px solid var(--border-glass);">
+              <div style="font-size:10px; font-weight:700; color:var(--gold-accent); margin-bottom:6px; display:flex; justify-content:space-between;">
+                <span>⚙️ Transaction Fee Slider</span>
+                <span id="cockpit-fee-val" class="font-mono">1.0%</span>
+              </div>
+              <input type="range" min="0.5" max="5.0" step="0.1" value="1.0" oninput="document.getElementById('cockpit-fee-val').innerText = this.value + '%';" style="width:100%; accent-color:var(--gold-accent);">
             </div>
           </div>
 
-          <!-- User Management & Currency Tools -->
-          <div style="margin-bottom:12px; font-weight:700; color:var(--gold-accent);">User List & Account Modify Tools</div>
+          <!-- User Management & Account Modify Tools -->
+          <div style="margin-bottom:12px; font-weight:700; color:var(--gold-accent); font-size:13px;">User List & Account Modify Deck</div>
           <div id="owner-users-list"></div>
         </div>
 
@@ -335,18 +364,115 @@
 
     <!-- PET SYSTEM MODAL -->
     <div id="modal-pet-system" class="modal-overlay">
-      <div class="modal-content" style="text-align:center;">
+      <div class="modal-content" style="max-width:440px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3>🐲 Cyber Pet Companion</h3>
+          <h3>🐾 Pet Companion System</h3>
           <button onclick="PayWellRouter.closeModal('modal-pet-system')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
         </div>
-        <div style="font-size:64px; margin:12px 0;">🐲</div>
-        <div style="font-weight:700; font-size:16px; color:#fff;">Cyber Dragon (Lvl <span id="pet-modal-lvl">5</span>)</div>
-        <div style="font-size:12px; color:var(--primary-green); margin-bottom:16px;">Happiness: 98% | XP: 450/500</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button onclick="alert('🐲 Pet Fed! +10 XP')" class="btn btn-primary">🥩 Feed (10 PW)</button>
-          <button onclick="alert('🐲 Played with Pet! +15 Happiness')" class="btn btn-gold">⚽ Play Game</button>
+        <div id="pet-modal-dynamic-content"></div>
+      </div>
+    </div>
+
+    <!-- PET SHOP MODAL -->
+    <div id="modal-pet-shop" class="modal-overlay">
+      <div class="modal-content" style="max-width:460px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">🏪 Community Pet Shop</h3>
+          <button onclick="PayWellRouter.closeModal('modal-pet-shop')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
         </div>
+        <div id="pet-shop-grid" style="max-height:360px; overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- OWNER PET CREATION MODAL -->
+    <div id="modal-owner-pet-create" class="modal-overlay">
+      <div class="modal-content" style="max-width:460px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">👑 Owner Pet Creation Deck</h3>
+          <button onclick="PayWellRouter.closeModal('modal-owner-pet-create')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Pet Name</label>
+          <input type="text" id="owner-pet-name" class="form-input" style="font-size:11px;" placeholder="e.g. Celestial Phoenix">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Pet Type</label>
+            <select id="owner-pet-type" class="form-input" style="font-size:11px;">
+              <option value="Dragon">Dragon</option>
+              <option value="Phoenix">Phoenix</option>
+              <option value="Unicorn">Unicorn</option>
+              <option value="Wolf">Wolf</option>
+              <option value="Fox">Fox</option>
+              <option value="Cat">Cat</option>
+              <option value="Dog">Dog</option>
+              <option value="Rabbit">Rabbit</option>
+              <option value="Panda">Panda</option>
+              <option value="Tiger">Tiger</option>
+              <option value="Lion">Lion</option>
+              <option value="Eagle">Eagle</option>
+              <option value="Shark">Shark</option>
+              <option value="Dinosaur">Dinosaur</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Emoji / Image Symbol</label>
+            <input type="text" id="owner-pet-image" class="form-input" style="font-size:11px;" value="🦅">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Rarity</label>
+            <select id="owner-pet-rarity" class="form-input" style="font-size:11px;">
+              <option value="Common">Common</option>
+              <option value="Uncommon">Uncommon</option>
+              <option value="Rare">Rare</option>
+              <option value="Epic">Epic</option>
+              <option value="Legendary">Legendary</option>
+              <option value="Mythic">Mythic</option>
+              <option value="Galaxy">Galaxy</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Personality</label>
+            <select id="owner-pet-personality" class="form-input" style="font-size:11px;">
+              <option value="Playful">Playful</option>
+              <option value="Loyal">Loyal</option>
+              <option value="Brave">Brave</option>
+              <option value="Clever">Clever</option>
+              <option value="Calm">Calm</option>
+              <option value="Energetic">Energetic</option>
+              <option value="Mysterious">Mysterious</option>
+              <option value="Protective">Protective</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Special Skill</label>
+            <select id="owner-pet-skill" class="form-input" style="font-size:11px;">
+              <option value="Savings Boost">Savings Boost</option>
+              <option value="Money Finder">Money Finder</option>
+              <option value="Fee Reduction">Fee Reduction</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Base Price (PW)</label>
+            <input type="number" id="owner-pet-price" class="form-input" style="font-size:11px;" value="1500">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Description</label>
+          <input type="text" id="owner-pet-desc" class="form-input" style="font-size:11px;" placeholder="Unique features and lore of this pet...">
+        </div>
+
+        <button onclick="PayWellPet.submitOwnerCreatePet()" class="btn btn-gold" style="padding:8px; font-size:11px;">Publish Pet to Store</button>
       </div>
     </div>
 
@@ -375,27 +501,59 @@
 
     <!-- EXCHANGE SYSTEM MODAL (KBZPAY / WAVEPAY) -->
     <div id="modal-exchange" class="modal-overlay">
-      <div class="modal-content">
+      <div class="modal-content" style="max-width:460px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="color:var(--gold-accent);">🔀 KBZPay / WavePay Exchange</h3>
+          <h3 style="color:var(--gold-accent);">🔀 KBZPay / WavePay Exchange System</h3>
           <button onclick="PayWellRouter.closeModal('modal-exchange')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
         </div>
-        <div class="form-group">
-          <label class="form-label" style="font-size:10px;">Exchange Type</label>
-          <select id="ex-type-select" class="form-input" style="font-size:11px;">
-            <option value="deposit">Deposit MMK ➔ PW Tokens</option>
-            <option value="withdraw">Withdraw PW Tokens ➔ MMK (Kpay/Wave)</option>
-          </select>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px;">
+          <button id="ex-tab-new" onclick="PayWellApp.switchExchangeTab('new')" class="btn btn-gold" style="padding:6px; font-size:11px;">New Exchange</button>
+          <button id="ex-tab-orders" onclick="PayWellApp.switchExchangeTab('orders')" class="btn btn-glass" style="padding:6px; font-size:11px;">Order Tracker</button>
         </div>
-        <div class="form-group">
-          <label class="form-label" style="font-size:10px;">Amount in MMK (KS)</label>
-          <input type="number" id="ex-amt-input" class="form-input" style="font-size:11px;" placeholder="35000">
+
+        <div id="ex-panel-new">
+          <!-- Kpay Official Account Box -->
+          <div class="glass-card glass-card-gold" style="padding:12px; margin-bottom:12px;">
+            <div style="font-size:10px; color:var(--text-muted);">OFFICIAL KBZPAY ACCOUNT</div>
+            <div style="font-weight:800; color:var(--gold-accent); font-size:15px; margin:2px 0;">09763458034 (DMTD)</div>
+            <div style="font-size:10px; color:var(--primary-green);">Rate: 1 PW Token = 1 KS MMK</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Exchange Direction</label>
+            <select id="ex-type-select" onchange="PayWellApp.calcExchangeFee()" class="form-input" style="font-size:11px;">
+              <option value="deposit">Deposit MMK (Kpay) ➔ PW Tokens</option>
+              <option value="withdraw">Withdraw PW Tokens ➔ MMK (Kpay/Wave)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Amount in MMK (KS) / PW</label>
+            <input type="number" id="ex-amt-input" onkeyup="PayWellApp.calcExchangeFee()" class="form-input" style="font-size:11px;" placeholder="35000">
+          </div>
+
+          <div style="background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:6px; margin-bottom:10px; font-size:11px; display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted);">Random System Fee:</span>
+            <span id="ex-calculated-fee" class="font-mono" style="color:var(--gold-accent); font-weight:700;">350 KS</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Your Kpay / Wave Number & Account Name</label>
+            <input type="text" id="ex-acct-input" class="form-input" style="font-size:11px;" placeholder="09xxxxxxxxx (User Name)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:10px;">Transfer Screenshot Proof (Optional / Simulated)</label>
+            <input type="file" id="ex-proof-file" class="form-input" style="font-size:10px; padding:4px;">
+          </div>
+
+          <button onclick="PayWellApp.submitExchangeRequest()" class="btn btn-gold" style="padding:8px; font-size:11px;">Submit Exchange Order</button>
         </div>
-        <div class="form-group">
-          <label class="form-label" style="font-size:10px;">Payment Account (Kpay / Wave Number)</label>
-          <input type="text" id="ex-acct-input" class="form-input" style="font-size:11px;" placeholder="09xxxxxxxxx">
+
+        <div id="ex-panel-orders" style="display:none;">
+          <div id="ex-orders-list" style="max-height:300px; overflow-y:auto;"></div>
         </div>
-        <button onclick="alert('✓ Exchange order submitted to Owner deck!')" class="btn btn-gold" style="padding:8px; font-size:11px;">Submit Exchange Request</button>
       </div>
     </div>
 
@@ -749,6 +907,50 @@
       </div>
     </div>
 
+    <!-- OWNER NEXORA TOKEN PRICING MODAL -->
+    <div id="modal-owner-nexora" class="modal-overlay">
+      <div class="modal-content" style="max-width:440px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">🎫 NEXORA Pass Price Control Deck</h3>
+          <button onclick="PayWellRouter.closeModal('modal-owner-nexora')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">One-Time Pass (🎫 Blue)</label>
+          <input type="number" id="nexora-price-1" class="form-input" style="font-size:11px;" value="500">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Monthly Pass (📅 Purple)</label>
+          <input type="number" id="nexora-price-2" class="form-input" style="font-size:11px;" value="5000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Yearly Pass (👑 Gold)</label>
+          <input type="number" id="nexora-price-3" class="form-input" style="font-size:11px;" value="50000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size:10px;">Permanent Pass (♾️ Rainbow)</label>
+          <input type="number" id="nexora-price-4" class="form-input" style="font-size:11px;" value="500000">
+        </div>
+
+        <button onclick="PayWellOwner.saveNexoraPrices()" class="btn btn-gold" style="padding:8px; font-size:11px;">Update Nexora Pass Prices</button>
+      </div>
+    </div>
+
+    <!-- OWNER KPAY REQUESTS MODAL -->
+    <div id="modal-owner-kpay" class="modal-overlay">
+      <div class="modal-content" style="max-width:460px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:var(--gold-accent);">📲 Kpay / Wave Deposit Requests</h3>
+          <button onclick="PayWellRouter.closeModal('modal-owner-kpay')" class="btn btn-glass" style="width:auto; padding:4px 10px;">✕</button>
+        </div>
+
+        <div id="owner-kpay-list" style="max-height:360px; overflow-y:auto;"></div>
+      </div>
+    </div>
+
     <!-- OWNER ACCOUNT MODIFY MODAL -->
     <div id="modal-owner-acct-modify" class="modal-overlay">
       <div class="modal-content">
@@ -775,7 +977,16 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:12px;">
+        <!-- 4-Level Security Penalty System -->
+        <div style="margin:10px 0 6px 0; font-size:10px; font-weight:700; color:var(--red-alert);">4-Tier Security Penalties</div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-bottom:10px;">
+          <button onclick="PayWellOwner.submitUserPenalty(1)" class="btn btn-glass" style="padding:4px; font-size:9px; color:#FFD700;">L1 Warn</button>
+          <button onclick="PayWellOwner.submitUserPenalty(2)" class="btn btn-glass" style="padding:4px; font-size:9px; color:#FF9100;">L2 Freeze</button>
+          <button onclick="PayWellOwner.submitUserPenalty(3)" class="btn btn-glass" style="padding:4px; font-size:9px; color:#FF5252;">L3 Suspend</button>
+          <button onclick="PayWellOwner.submitUserPenalty(4)" class="btn btn-danger" style="padding:4px; font-size:9px;">L4 Ban</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:8px;">
           <button onclick="PayWellOwner.submitToggleUserStatus('active')" class="btn btn-primary" style="padding:6px; font-size:10px;">Active</button>
           <button onclick="PayWellOwner.submitToggleUserStatus('frozen')" class="btn btn-gold" style="padding:6px; font-size:10px;">Freeze</button>
           <button onclick="PayWellOwner.submitToggleUserStatus('banned')" class="btn btn-danger" style="padding:6px; font-size:10px;">Ban User</button>
@@ -820,6 +1031,7 @@
   <script src="js/db.js"></script>
   <script src="js/security.js"></script>
   <script src="js/router.js"></script>
+  <script src="js/components/pet.js"></script>
   <script src="js/components/owner.js"></script>
   <script src="js/components/crypto.js"></script>
   <script src="js/components/p2p.js"></script>

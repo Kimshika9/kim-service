@@ -15,6 +15,11 @@ const PayWellDB = {
   STORAGE_PFT: 'paywell_db_pft',
   STORAGE_AUCTIONS: 'paywell_db_auctions',
   STORAGE_QUESTS: 'paywell_db_quests',
+  STORAGE_NEXORA_PRICES: 'paywell_db_nexora_prices',
+  STORAGE_KPAY_DEPOSITS: 'paywell_db_kpay_deposits',
+  STORAGE_KPAY_WITHDRAWALS: 'paywell_db_kpay_withdrawals',
+  STORAGE_PENALTIES: 'paywell_db_penalties',
+  STORAGE_STREAKS: 'paywell_db_streaks',
 
   // All 20 Requested Cryptocurrencies
   CRYPTO_COINS: [
@@ -141,6 +146,209 @@ const PayWellDB = {
         { id: 'p2p-2', seller: 'Aung_Exchange', type: 'sell', asset: 'PW', price_mmk: 3180, total_amount: 500, min_limit: 5, payment_method: 'CBPay / KBZPay', status: 'active', badge: 'Pro Trader' }
       ];
       localStorage.setItem(this.STORAGE_P2P_LISTINGS, JSON.stringify(listings));
+    }
+
+    if (!localStorage.getItem(this.STORAGE_NEXORA_PRICES)) {
+      const defaultNexora = {
+        one_time: 500,
+        monthly: 5000,
+        yearly: 50000,
+        permanent: 500000
+      };
+      localStorage.setItem(this.STORAGE_NEXORA_PRICES, JSON.stringify(defaultNexora));
+    }
+
+    if (!localStorage.getItem(this.STORAGE_PETS)) {
+      const defaultPets = [
+        {
+          id: 'pet-1',
+          name: 'Ignis Ember',
+          type: 'Dragon',
+          image: '🐉',
+          rarity: 'Legendary',
+          personality: 'Brave',
+          skill: 'Savings Boost',
+          price: 2500,
+          description: 'A fiery dragon companion that increases your daily savings vault interest rate.'
+        },
+        {
+          id: 'pet-2',
+          name: 'Aether Fox',
+          type: 'Fox',
+          image: '🦊',
+          rarity: 'Rare',
+          personality: 'Clever',
+          skill: 'Money Finder',
+          price: 1200,
+          description: 'A sly cosmic fox that uncovers daily PW token rewards.'
+        },
+        {
+          id: 'pet-3',
+          name: 'Shadow Wolf',
+          type: 'Wolf',
+          image: '🐺',
+          rarity: 'Epic',
+          personality: 'Protective',
+          skill: 'Fee Reduction',
+          price: 1800,
+          description: 'A fierce wolf guardian that slashes transaction fees.'
+        }
+      ];
+      localStorage.setItem(this.STORAGE_PETS, JSON.stringify(defaultPets));
+    }
+  },
+
+  getNexoraPrices() {
+    try {
+      return JSON.parse(localStorage.getItem(this.STORAGE_NEXORA_PRICES)) || { one_time: 500, monthly: 5000, yearly: 50000, permanent: 500000 };
+    } catch(e) {
+      return { one_time: 500, monthly: 5000, yearly: 50000, permanent: 500000 };
+    }
+  },
+
+  saveNexoraPrices(prices) {
+    localStorage.setItem(this.STORAGE_NEXORA_PRICES, JSON.stringify(prices));
+  },
+
+  getPets() {
+    try {
+      return JSON.parse(localStorage.getItem(this.STORAGE_PETS)) || [];
+    } catch(e) {
+      return [];
+    }
+  },
+
+  saveOwnerPet(petData) {
+    const pets = this.getPets();
+    const newPet = {
+      id: `pet-${Date.now()}`,
+      name: petData.name,
+      type: petData.type,
+      image: petData.image || '🐉',
+      rarity: petData.rarity || 'Common',
+      personality: petData.personality || 'Playful',
+      skill: petData.skill || 'Savings Boost',
+      price: parseFloat(petData.price) || 500,
+      description: petData.description || 'Exclusive community pet companion.'
+    };
+    pets.push(newPet);
+    localStorage.setItem(this.STORAGE_PETS, JSON.stringify(pets));
+    return newPet;
+  },
+
+  getUserPet(username) {
+    try {
+      const userPets = JSON.parse(localStorage.getItem('paywell_user_active_pets')) || {};
+      return userPets[username] || {
+        petId: 'pet-1',
+        name: 'Ignis Ember',
+        type: 'Dragon',
+        image: '🐉',
+        rarity: 'Legendary',
+        personality: 'Brave',
+        skill: 'Savings Boost',
+        level: 0,
+        xp: 0,
+        energy: 100,
+        lastFed: Date.now()
+      };
+    } catch(e) {
+      return null;
+    }
+  },
+
+  saveUserPet(username, petState) {
+    const userPets = JSON.parse(localStorage.getItem('paywell_user_active_pets')) || {};
+    userPets[username] = petState;
+    localStorage.setItem('paywell_user_active_pets', JSON.stringify(userPets));
+  },
+
+  addPetXP(username, amount, reason = '') {
+    const pet = this.getUserPet(username);
+    if (!pet) return;
+
+    pet.xp += amount;
+    const xpNeeded = 100 + (pet.level * 50);
+    if (pet.xp >= xpNeeded) {
+      pet.level += 1;
+      pet.xp -= xpNeeded;
+    }
+    this.saveUserPet(username, pet);
+    return pet;
+  },
+
+  getKpayDeposits() {
+    try {
+      return JSON.parse(localStorage.getItem(this.STORAGE_KPAY_DEPOSITS)) || [];
+    } catch(e) {
+      return [];
+    }
+  },
+
+  submitKpayDeposit(username, amountKs, proofImg) {
+    const deposits = this.getKpayDeposits();
+    const feeKs = Math.floor(Math.random() * 900) + 100; // 100-999 KS random fee
+    const dep = {
+      id: `DEP-${Date.now()}`,
+      username: username,
+      amount_ks: amountKs,
+      fee_ks: feeKs,
+      kpay_no: '09763458034 (DMTD)',
+      proof: proofImg || null,
+      status: 'pending',
+      created_at: new Date().toLocaleString()
+    };
+    deposits.unshift(dep);
+    localStorage.setItem(this.STORAGE_KPAY_DEPOSITS, JSON.stringify(deposits));
+    return dep;
+  },
+
+  approveKpayDeposit(depositId) {
+    const deposits = this.getKpayDeposits();
+    const dep = deposits.find(d => d.id === depositId);
+    if (!dep || dep.status === 'done') return;
+
+    dep.status = 'done';
+    localStorage.setItem(this.STORAGE_KPAY_DEPOSITS, JSON.stringify(deposits));
+
+    // Credit user balance (1 PW per 1 KS ratio for community token)
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === dep.username.toLowerCase());
+    if (user) {
+      user.balance += dep.amount_ks;
+      this.saveUsers(users);
+    }
+    return dep;
+  },
+
+  getUserPenalty(username) {
+    try {
+      const penalties = JSON.parse(localStorage.getItem(this.STORAGE_PENALTIES)) || {};
+      return penalties[username] || { level: 0, status: 'Clean', details: [] };
+    } catch(e) {
+      return { level: 0, status: 'Clean', details: [] };
+    }
+  },
+
+  setUserPenalty(username, level, reason) {
+    const penalties = JSON.parse(localStorage.getItem(this.STORAGE_PENALTIES)) || {};
+    const statuses = ['Clean', 'Level 1: Warning', 'Level 2: Trade Freeze', 'Level 3: Temp Suspension', 'Level 4: Permanent Ban'];
+    penalties[username] = {
+      level: level,
+      status: statuses[level] || 'Clean',
+      reason: reason,
+      updated_at: new Date().toLocaleString()
+    };
+    localStorage.setItem(this.STORAGE_PENALTIES, JSON.stringify(penalties));
+
+    // Update user status
+    const users = this.getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (user) {
+      if (level === 4) user.status = 'banned';
+      else if (level === 2 || level === 3) user.status = 'frozen';
+      else user.status = 'active';
+      this.saveUsers(users);
     }
   },
 
