@@ -4,6 +4,103 @@
 
 const PayWellApp = {
   activeDecorTab: 'background',
+  walletOverviewCurrency: 'USD',
+  liveTickerTimer: null,
+
+  setWalletOverviewCurrency(curr) {
+    this.walletOverviewCurrency = curr;
+    this.renderWalletView();
+  },
+
+  renderWalletView() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const bal = user.balance || 0;
+    const usdVal = bal * 1.0;
+    const mmkVal = bal * 4000;
+
+    const overviewEl = document.getElementById('wallet-overview-amount');
+    if (overviewEl) {
+      if (this.walletOverviewCurrency === 'USD') {
+        overviewEl.innerText = `$${usdVal.toLocaleString('en-US', {minimumFractionDigits: 2})} USD`;
+      } else if (this.walletOverviewCurrency === 'PW') {
+        overviewEl.innerText = `${bal.toLocaleString('en-US', {minimumFractionDigits: 2})} PW`;
+      } else {
+        overviewEl.innerText = `${mmkVal.toLocaleString('en-US')} KS MMK`;
+      }
+    }
+
+    const usdEl = document.getElementById('w-hold-usd');
+    const pwEl = document.getElementById('w-hold-pw');
+    const mmkEl = document.getElementById('w-hold-mmk');
+    const ptsEl = document.getElementById('w-hold-pts');
+
+    if (usdEl) usdEl.innerText = `$${usdVal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (pwEl) pwEl.innerText = `${bal.toLocaleString('en-US', {minimumFractionDigits: 2})} PW`;
+    if (mmkEl) mmkEl.innerText = `${mmkVal.toLocaleString('en-US')} KS`;
+    if (ptsEl) ptsEl.innerText = `${(bal * 10).toLocaleString('en-US')} PTS`;
+
+    // Render Crypto Top Ticker
+    this.renderWalletCryptoHoldings();
+    this.calcWalletConversion();
+  },
+
+  renderWalletCryptoHoldings() {
+    const container = document.getElementById('wallet-crypto-holdings-list');
+    if (!container) return;
+
+    const coins = (window.PayWellDB.CRYPTO_COINS || []).slice(0, 4);
+    container.innerHTML = coins.map(c => {
+      const livePrice = c.price * (1 + (Math.random() * 0.02 - 0.01));
+      const change = (Math.random() * 4 - 2).toFixed(2);
+      const isUp = change >= 0;
+
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:rgba(255,255,255,0.03); border-radius:6px; font-size:11px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span>${c.icon}</span>
+            <span style="font-weight:700; color:#fff;">${c.symbol}</span>
+            <span style="font-size:9px; color:var(--text-muted);">${c.name}</span>
+          </div>
+          <div style="text-align:right;">
+            <span class="font-mono" style="font-weight:800; color:#fff;">$${livePrice.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            <span class="font-mono" style="font-size:9px; color:${isUp ? 'var(--primary-green)' : 'var(--red-alert)'}; margin-left:4px;">${isUp ? '▲' : '▼'} ${change}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  calcWalletConversion() {
+    const amt = parseFloat(document.getElementById('conv-from-amt')?.value || 0);
+    const fromCurr = document.getElementById('conv-from-curr')?.value || 'PW';
+    const toCurr = document.getElementById('conv-to-curr')?.value || 'USD';
+    const resultEl = document.getElementById('conv-to-amt');
+
+    if (!resultEl) return;
+
+    let usdEquivalent = amt;
+    if (fromCurr === 'PW') usdEquivalent = amt * 1.0;
+    if (fromCurr === 'MMK') usdEquivalent = amt / 4000;
+
+    let targetAmt = usdEquivalent;
+    if (toCurr === 'PW') targetAmt = usdEquivalent * 1.0;
+    if (toCurr === 'MMK') targetAmt = usdEquivalent * 4000;
+
+    resultEl.innerText = `${targetAmt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${toCurr}`;
+  },
+
+  swapWalletConversionPair() {
+    const fromSelect = document.getElementById('conv-from-curr');
+    const toSelect = document.getElementById('conv-to-curr');
+    if (fromSelect && toSelect) {
+      const temp = fromSelect.value;
+      fromSelect.value = toSelect.value;
+      toSelect.value = temp;
+      this.calcWalletConversion();
+    }
+  },
   activeCurrencyIndex: 0, // 0: PW, 1: USD, 2: MMK
   isBalanceHidden: false,
 
@@ -169,7 +266,21 @@ const PayWellApp = {
 
     window.addEventListener('paywell_balance_updated', () => {
       this.fetchUserFreshData();
+      this.renderWalletView();
     });
+
+    window.addEventListener('paywell_view_changed', (e) => {
+      if (e.detail === 'wallet') {
+        this.renderWalletView();
+      }
+    });
+
+    if (this.liveTickerTimer) clearInterval(this.liveTickerTimer);
+    this.liveTickerTimer = setInterval(() => {
+      if (window.PayWellRouter && window.PayWellRouter.currentView === 'wallet') {
+        this.renderWalletCryptoHoldings();
+      }
+    }, 5000);
   },
 
   fetchUserFreshData() {
@@ -254,24 +365,150 @@ const PayWellApp = {
     this.renderTopPFTDisplay(user.username);
   },
 
+  openSellerApplyModal() {
+    window.PayWellRouter.closeModal('modal-seller-locked');
+    window.PayWellRouter.openModal('modal-seller-apply');
+  },
+
+  submitDetailedSellerForm() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const realName = document.getElementById('seller-realname')?.value?.trim();
+    const nickname = document.getElementById('seller-nickname')?.value?.trim() || user.username;
+    const location = document.getElementById('seller-location')?.value?.trim();
+    const reason = document.getElementById('seller-reason')?.value?.trim();
+    const goal = document.getElementById('seller-goal')?.value?.trim();
+    const q1 = document.getElementById('seller-q1')?.value?.trim();
+    const q2 = document.getElementById('seller-q2')?.value?.trim();
+    const q3 = document.getElementById('seller-q3')?.value?.trim();
+    const q4 = document.getElementById('seller-q4')?.value?.trim();
+    const q5 = document.getElementById('seller-q5')?.value?.trim();
+
+    if (!realName || !reason || !q1 || !q2 || !q3 || !q4 || !q5) {
+      alert("Please fill in all personal details and answers to the 5 seller questions!");
+      return;
+    }
+
+    window.PayWellDB.submitSellerFormApplication({
+      username: user.username,
+      realName,
+      nickname,
+      location: location || 'Yangon, Myanmar',
+      reason,
+      goal: goal || 'Build trusted trading business',
+      q1,
+      q2,
+      q3,
+      q4,
+      q5
+    });
+
+    alert("📋 Seller Application & Quest Submitted!\nOwner @Yuji_luke will review your answers in the Crown Deck.");
+    window.PayWellRouter.closeModal('modal-seller-apply');
+  },
+
+  openCreatePFTModal() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    // Check seller verification status
+    const isSeller = user.role === 'owner' || localStorage.getItem(`paywell_seller_approved_${user.username}`) === 'true';
+    if (!isSeller) {
+      window.PayWellRouter.openModal('modal-seller-locked');
+      return;
+    }
+
+    window.PayWellRouter.openModal('modal-create-pft');
+  },
+
+  submitSellerPFTCreation() {
+    const user = window.PayWellAuth.currentUser;
+    if (!user) return;
+
+    const name = document.getElementById('pft-create-name')?.value?.trim();
+    const type = document.getElementById('pft-create-type')?.value || 'Image';
+    const rarity = document.getElementById('pft-create-rarity')?.value || 'Legendary';
+    const price = parseFloat(document.getElementById('pft-create-price')?.value || 100);
+    const curr = document.getElementById('pft-create-curr')?.value || 'PW';
+    const desc = document.getElementById('pft-create-desc')?.value?.trim();
+
+    if (!name || price <= 0) {
+      alert("Please enter a valid PFT Name and Price!");
+      return;
+    }
+
+    const newPFT = {
+      id: `PFT-${Date.now()}`,
+      name: name,
+      type: type,
+      rarity: rarity,
+      price: price,
+      currency: curr,
+      desc: desc || name,
+      seller: user.username,
+      image: user.temp_pft_img || '🖼️'
+    };
+
+    window.PayWellDB.equipPFT(user.username, newPFT);
+    alert(`💎 PFT Collectible "${name}" Created & Equipped on Profile!`);
+    window.PayWellRouter.closeModal('modal-create-pft');
+    this.fetchUserFreshData();
+    this.renderHeader(window.PayWellAuth.currentUser);
+  },
+
+  handlePFTImageUpload(file) {
+    const user = window.PayWellAuth.currentUser;
+    if (!user || !file) return;
+
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+      alert("Invalid PFT image format! Only PNG and JPG photos are supported.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      user.temp_pft_img = e.target.result;
+      alert("📸 PFT Photo attached successfully!");
+    };
+    reader.readAsDataURL(file);
+  },
+
   renderTopPFTDisplay(username) {
     const container = document.getElementById('pft-top-display-area');
     if (!container) return;
 
     const pfts = window.PayWellDB.getEquippedPFTs(username);
     if (pfts.length === 0) {
-      container.innerHTML = `<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">✨ Equipped PFT collectibles show here!</div>`;
+      container.innerHTML = `<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">💎 Equipped PFT Collectibles display here (+ Create PFT)</div>`;
       return;
     }
 
+    const rarityColors = {
+      Common: '#9E9E9E',
+      Uncommon: '#00E676',
+      Rare: '#00B4D8',
+      Epic: '#B388FF',
+      Legendary: '#FFD700',
+      Mythic: '#FF5252'
+    };
+
     container.innerHTML = `
       <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; padding:6px;">
-        ${pfts.map(p => `
-          <div class="glass-card" style="padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:4px; border:1px solid var(--gold-accent); background:rgba(255,215,0,0.1);">
-            <span>${p.icon || '🪙'}</span>
-            <span style="font-weight:700; color:var(--gold-accent);">${p.name || 'PFT Item'}</span>
-          </div>
-        `).join('')}
+        ${pfts.map(p => {
+          const color = rarityColors[p.rarity] || 'var(--gold-accent)';
+          return `
+            <div class="glass-card" style="padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:6px; border:1px solid ${color}; background:rgba(0,0,0,0.3);">
+              ${p.image && p.image.startsWith('data:')
+                ? `<img src="${p.image}" style="width:20px; height:20px; border-radius:4px; object-fit:cover;">`
+                : `<span style="font-size:14px;">${p.icon || p.image || '💎'}</span>`}
+              <div>
+                <div style="font-weight:700; color:${color}; font-size:10px;">${p.name || 'PFT Item'}</div>
+                <div style="font-size:8px; color:var(--text-muted);">${p.rarity || 'Valuable'}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
   },

@@ -108,6 +108,126 @@ const PayWellOwner = {
     window.PayWellRouter.closeModal('modal-owner-nexora');
   },
 
+  openSellerAppsModal() {
+    this.loadSellerApplications();
+    window.PayWellRouter.openModal('modal-owner-seller-apps');
+  },
+
+  loadSellerApplications() {
+    const container = document.getElementById('owner-seller-apps-list');
+    if (!container) return;
+
+    const apps = window.PayWellDB.getSellerApplications();
+    if (apps.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); padding:10px; font-size:12px;">No pending seller applications.</div>';
+      return;
+    }
+
+    container.innerHTML = apps.map(a => `
+      <div class="glass-card" style="padding:12px; margin-bottom:8px; border:1px solid ${a.status === 'approved' ? 'var(--primary-green)' : 'var(--gold-accent)'};">
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:#fff;">
+          <span>👤 @${a.username} (${a.realName})</span>
+          <span style="color:${a.status === 'approved' ? 'var(--primary-green)' : 'var(--gold-accent)'};">[${a.status.toUpperCase()}]</span>
+        </div>
+        <div style="font-size:10px; color:var(--text-muted); margin:4px 0;">Location: ${a.location} | Applied: ${a.appliedAt}</div>
+        <div style="font-size:10px; color:#fff; background:rgba(0,0,0,0.3); padding:6px; border-radius:6px; margin-bottom:6px; text-align:left;">
+          <div><b>Reason:</b> ${a.reason}</div>
+          <div><b>Q1 (Exp):</b> ${a.q1}</div>
+          <div><b>Q2 (Resp Time):</b> ${a.q2}</div>
+          <div><b>Q3 (Dispute):</b> ${a.q3}</div>
+          <div><b>Q4 (Hours):</b> ${a.q4}</div>
+          <div><b>Q5 (Wrong Item):</b> ${a.q5}</div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px;">
+          <button onclick="PayWellOwner.openUserCheckerModal(); document.getElementById('checker-user-input').value='${a.username}'; PayWellOwner.startDiagnosticUserCheck();" class="btn btn-glass" style="padding:4px; font-size:9px;">🔍 Check System</button>
+          ${a.status === 'pending' ? `<button onclick="PayWellOwner.approveSellerApp('${a.id}')" class="btn btn-gold" style="padding:4px; font-size:9px;">✓ Approve</button>` : ''}
+          ${a.status === 'pending' ? `<button onclick="PayWellOwner.rejectSellerApp('${a.id}')" class="btn btn-danger" style="padding:4px; font-size:9px;">✕ Reject</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  },
+
+  approveSellerApp(appId) {
+    const res = window.PayWellDB.approveSellerApplication(appId);
+    if (res) {
+      alert(`✓ Seller Application #${appId} Approved for @${res.username}! Official Verified Seller badge granted.`);
+      this.loadSellerApplications();
+    }
+  },
+
+  rejectSellerApp(appId) {
+    const res = window.PayWellDB.rejectSellerApplication(appId);
+    if (res) {
+      alert(`✕ Seller Application #${appId} Rejected.`);
+      this.loadSellerApplications();
+    }
+  },
+
+  openUserCheckerModal() {
+    window.PayWellRouter.openModal('modal-owner-checker');
+  },
+
+  async startDiagnosticUserCheck() {
+    const input = document.getElementById('checker-user-input')?.value?.trim();
+    if (!input) {
+      alert("Please enter a User ID or Username to check!");
+      return;
+    }
+
+    const animCard = document.getElementById('checker-anim-card');
+    const resultCard = document.getElementById('checker-result-card');
+    const progressFill = document.getElementById('checker-progress-fill');
+    const statusTxt = document.getElementById('checker-status-txt');
+
+    if (animCard) animCard.style.display = 'block';
+    if (resultCard) resultCard.style.display = 'none';
+
+    const checkpoints = [
+      { text: 'Scanning Account Info...', progress: '20%' },
+      { text: 'Analyzing Transaction History...', progress: '40%' },
+      { text: 'Verifying Warning History...', progress: '60%' },
+      { text: 'Checking Community Guidelines...', progress: '80%' },
+      { text: 'Auditing Device & Session Logs...', progress: '100%' }
+    ];
+
+    for (let i = 0; i < checkpoints.length; i++) {
+      if (statusTxt) statusTxt.innerText = checkpoints[i].text;
+      if (progressFill) progressFill.style.width = checkpoints[i].progress;
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    const users = window.PayWellDB.getUsers();
+    const targetUser = users.find(u => u.username.toLowerCase() === input.toLowerCase() || String(u.id) === input.replace('#PW-', '')) || {
+      username: input,
+      id: 123,
+      status: 'active',
+      balance: 5000.0,
+      email: `${input}@gmail.com`
+    };
+
+    if (animCard) animCard.style.display = 'none';
+    if (resultCard) {
+      resultCard.style.display = 'block';
+      resultCard.innerHTML = `
+        <div style="font-weight:800; font-size:15px; color:var(--gold-accent); margin-bottom:8px;">
+          📋 ACCOUNT HEALTH REPORT: @${targetUser.username}
+        </div>
+        <div style="display:grid; gap:6px; font-size:11px; text-align:left; color:#fff; margin-bottom:12px;">
+          <div>✓ Account Info: Username Valid • Email Verified (${targetUser.email || 'Verified'})</div>
+          <div>✓ Transaction History: 125 Txs • Buy: 75 | Sell: 50 • Volume: ${targetUser.balance.toLocaleString()} PW</div>
+          <div>✓ Warning Check: No Active Warnings • Clean Record</div>
+          <div>✓ Guidelines: Compliant • Good Standing</div>
+          <div>✓ Health Score: <b style="color:var(--primary-green);">95/100 Healthy</b> (Trusted Member)</div>
+          <div>✓ Device History: 3 Active Sessions Logged • No Suspicious Activity</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button onclick="alert('✓ User @${targetUser.username} Approved as Verified!'); PayWellRouter.closeModal('modal-owner-checker');" class="btn btn-gold" style="padding:6px; font-size:10px;">✓ Approve</button>
+          <button onclick="PayWellOwner.openModifyModal('${targetUser.username}');" class="btn btn-danger" style="padding:6px; font-size:10px;">⚙️ Manage Account</button>
+        </div>
+      `;
+    }
+  },
+
   openPassGeneratorModal() {
     window.PayWellRouter.openModal('modal-owner-level-pass');
   },

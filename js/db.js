@@ -24,6 +24,7 @@ const PayWellDB = {
   STORAGE_VISA_CARDS: 'paywell_db_visa_cards',
   STORAGE_LEVEL_PASSES: 'paywell_db_level_passes',
   STORAGE_REFERRALS: 'paywell_db_referrals',
+  STORAGE_SELLER_APPS: 'paywell_db_seller_apps',
 
   // All 20 Requested Cryptocurrencies
   CRYPTO_COINS: [
@@ -1044,6 +1045,61 @@ const PayWellDB = {
       data[refKey].count = data[refKey].friends.length;
       localStorage.setItem(this.STORAGE_REFERRALS, JSON.stringify(data));
     }
+  },
+
+  // --- SELLER APPLICATIONS & OWNER REVIEW DECK ---
+  getSellerApplications() {
+    try {
+      return JSON.parse(localStorage.getItem(this.STORAGE_SELLER_APPS)) || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  submitSellerFormApplication(appData) {
+    const apps = this.getSellerApplications();
+    const newApp = {
+      id: `APP-${Date.now()}`,
+      username: appData.username,
+      realName: appData.realName,
+      nickname: appData.nickname,
+      location: appData.location,
+      reason: appData.reason,
+      goal: appData.goal,
+      q1: appData.q1,
+      q2: appData.q2,
+      q3: appData.q3,
+      q4: appData.q4,
+      q5: appData.q5,
+      status: 'pending',
+      appliedAt: new Date().toLocaleString()
+    };
+    apps.unshift(newApp);
+    localStorage.setItem(this.STORAGE_SELLER_APPS, JSON.stringify(apps));
+    return newApp;
+  },
+
+  approveSellerApplication(appId) {
+    const apps = this.getSellerApplications();
+    const app = apps.find(a => a.id === appId);
+    if (app) {
+      app.status = 'approved';
+      localStorage.setItem(this.STORAGE_SELLER_APPS, JSON.stringify(apps));
+      localStorage.setItem(`paywell_seller_approved_${app.username}`, 'true');
+      return app;
+    }
+    return null;
+  },
+
+  rejectSellerApplication(appId) {
+    const apps = this.getSellerApplications();
+    const app = apps.find(a => a.id === appId);
+    if (app) {
+      app.status = 'rejected';
+      localStorage.setItem(this.STORAGE_SELLER_APPS, JSON.stringify(apps));
+      return app;
+    }
+    return null;
   },
 
   claimReferralMilestone(username, targetFriends, rewardPW) {
