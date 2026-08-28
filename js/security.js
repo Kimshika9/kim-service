@@ -132,27 +132,57 @@ const PayWellAuth = {
   },
 
   loginWithGoogle() {
-    const username = `google_user_${Math.floor(100 + Math.random() * 900)}`;
-    let user = window.PayWellDB.findUser(username);
-    if (!user) {
-      user = window.PayWellDB.registerUser(username, `${username}@gmail.com`, 'GoogleOAuth2024!', null);
+    const emailInput = prompt("🌐 Google Sign-In\nPlease enter your Gmail address:", "user@gmail.com");
+    if (!emailInput) return;
+
+    const email = emailInput.trim().toLowerCase();
+    if (!email.includes('@') || !email.includes('.')) {
+      alert("Invalid Gmail format! Please enter a valid Google email address.");
+      return;
     }
+
+    // Try finding existing user by email or username prefix
+    const emailPrefix = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
+    let user = window.PayWellDB.findUser(email) || window.PayWellDB.findUser(emailPrefix);
+
+    if (!user) {
+      // Register new user with Google email
+      const username = emailPrefix.length >= 3 ? emailPrefix : `google_${Date.now()}`;
+      try {
+        user = window.PayWellDB.registerUser(username, email, 'GoogleOAuth2024!', null);
+      } catch (e) {
+        // If username exists, find or generate unique
+        user = window.PayWellDB.findUser(username) || window.PayWellDB.registerUser(`${username}_g`, email, 'GoogleOAuth2024!', null);
+      }
+    }
+
     this.setUser(user);
-    alert(`🌐 Logged in with Google Account (@${username})!`);
+    alert(`🌐 Signed in with Google Account: ${email} (@${user.username})!`);
+    if (window.PayWellRouter) window.PayWellRouter.closeModal('modal-auth');
   },
 
   loginWithTelegram() {
-    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user?.username) {
       const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
       this.autoLoginTelegram(tgUser);
     } else {
-      const username = `tg_user_${Math.floor(100 + Math.random() * 900)}`;
-      let user = window.PayWellDB.findUser(username);
-      if (!user) {
-        user = window.PayWellDB.registerUser(username, `${username}@telegram.org`, 'TgPass123!', '6399210935');
+      const tgInput = prompt("✈️ Telegram Sign-In\nPlease enter your Telegram Username (e.g. Yuji_luke):", "Yuji_luke");
+      if (!tgInput) return;
+
+      const tgUsername = tgInput.trim().replace(/^@/, '');
+      if (tgUsername.length < 3) {
+        alert("Invalid Telegram username! Username must be at least 3 characters.");
+        return;
       }
+
+      let user = window.PayWellDB.findUser(tgUsername);
+      if (!user) {
+        user = window.PayWellDB.registerUser(tgUsername, `${tgUsername}@telegram.org`, 'TgPass2024!', null);
+      }
+
       this.setUser(user);
-      alert(`✈️ Logged in with Telegram Profile (@${username})!`);
+      alert(`✈️ Signed in with Telegram Account: @${user.username}!`);
+      if (window.PayWellRouter) window.PayWellRouter.closeModal('modal-auth');
     }
   }
 };
